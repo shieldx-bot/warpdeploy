@@ -148,4 +148,3 @@ Giai đoạn này kết nối mọi thứ lại với nhau và thêm các tính 
           * Kiểm tra lại toàn bộ hệ thống, sửa lỗi và tối ưu hóa.
       * **Kết quả:** Một MVP hoàn chỉnh, sẵn sàng để demo và chia sẻ.
 
- 

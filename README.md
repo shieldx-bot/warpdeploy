@@ -88,6 +88,78 @@ graph TD
 
 -----
 
+
+## Cấu Trúc Hệ Thông (Nguồn Từ Các Repo Mẫu Trên Github)
+
+``` bash 
+
+
+launchpad/
+├── 📂 packages/
+│   ├── 📂 api-gateway/         # Microservice: Cổng vào
+│   │   ├── src/
+│   │   ├── gateway.config.yml
+│   │   ├── Dockerfile
+│   │   └── package.json
+│   │
+│   ├── 📂 auth-service/          # Microservice: Xác thực
+│   │   ├── src/
+│   │   │   ├── controllers/
+│   │   │   ├── services/
+│   │   │   ├── index.js
+│   │   │   └── ...
+│   │   ├── Dockerfile
+│   │   └── package.json
+│   │
+│   ├── 📂 project-service/       # Microservice: Quản lý dự án
+│   │   ├── src/
+│   │   │   ├── controllers/
+│   │   │   ├── models/          # Định nghĩa schema CSDL
+│   │   │   ├── routes/
+│   │   │   ├── database.js
+│   │   │   └── server.js
+│   │   ├── Dockerfile
+│   │   └── package.json
+│   │
+│   ├── 📂 orchestrator-service/  # Microservice: Điều phối
+│   │   ├── src/
+│   │   │   ├── jobs/            # Logic xử lý các tác vụ nặng
+│   │   │   ├── k8s-client.js
+│   │   │   └── worker.js        # File chính để chạy worker
+│   │   ├── Dockerfile
+│   │   └── package.json
+│   │
+│   ├── 📂 frontend/              # Ứng dụng React
+│   │   ├── public/
+│   │   ├── src/
+│   │   │   ├── components/
+│   │   │   ├── pages/
+│   │   │   ├── hooks/
+│   │   │   ├── services/      # Các hàm gọi API
+│   │   │   └── App.js
+│   │   ├── Dockerfile
+│   │   └── package.json
+│   │
+│   └── 📂 shared/                # Thư mục chứa code dùng chung
+│       ├── utils/
+│       ├── types/
+│       └── package.json
+│
+├── 📂 k8s/                     # Tất cả file cấu hình Kubernetes
+│   ├── 📂 templates/
+│   │   ├── _helpers.tpl
+│   │   ├── deployment.yaml
+│   │   └── service.yaml
+│   ├── Chart.yaml
+│   └── values.yaml
+│
+├── 🐳 docker-compose.yml        # Để chạy toàn bộ hệ thống ở local
+├── .gitignore
+├── .prettierrc
+├── package.json                # package.json gốc quản lý toàn bộ monorepo (Lerna/Nx/Yarn Workspaces)
+└── README.md
+```
+
 ## 🚀 Bắt đầu (Getting Started) (DEMO)
 
 ### Yêu cầu (Prerequisites)
