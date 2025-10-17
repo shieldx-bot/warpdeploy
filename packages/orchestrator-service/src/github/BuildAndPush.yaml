@@ -1,0 +1,36 @@
+name:  Build Image And Push to GitHub Container Registry
+
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: add apt repository and buildpacks
+        run: sudo add-apt-repository ppa:cncf-buildpacks/pack-cli
+
+      - name: update ubuntu
+        run: sudo apt-get update
+
+      - name: install pack cli
+        run: sudo apt-get install pack-cli
+
+      - name: git clone repository
+        run: git clone  &{{github.event.inputs.cloneUrl}}
+
+      - name: into cloned directory
+        run: cd &{{github.event.inputs.NameRepo}}
+        
+      - name: build and push image to GitHub Container Registry
+        run: |
+          pack build ghcr.io/&{{github.event.inputs.hashUrl}}/&{{github.event.inputs.NameRepo}}:latest \
+          --path . \
+          --builder gcr.io/buildpacks/builder:v1 \
+          --publish      
+          
+            
