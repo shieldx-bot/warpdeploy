@@ -21,14 +21,14 @@ jobs:
         run: sudo apt-get install pack-cli
 
       - name: git clone repository
-        run: git clone  &{{github.event.inputs.cloneUrl}}
+        run: git clone  ${{github.event.inputs.cloneUrl}}
 
       - name: into cloned directory
-        run: cd &{{github.event.inputs.NameRepo}}
+        run: cd ${{github.event.inputs.NameRepo}}
         
       - name: build and push image to GitHub Container Registry
         run: |
-          pack build ghcr.io/&{{github.event.inputs.hashUrl}}/&{{github.event.inputs.NameRepo}}:latest \
+          pack build ghcr.io/${{github.event.inputs.hashUrl}}/${{github.event.inputs.NameRepo}}:latest \
           --path . \
           --builder gcr.io/buildpacks/builder:v1 \
           --publish      
