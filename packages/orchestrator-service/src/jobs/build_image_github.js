@@ -1,28 +1,27 @@
-import axios from "axios";
-import { v4 as uuidv4 } from "uuid";
-
-/**
+const axios =  require ('axios');
+const { v4: uuidv4 } = require('uuid');
+ /**
  * Kích hoạt GitHub Action để build và push image Docker.
  * @param {string} owner - Tên chủ sở hữu repository.
  * @param {string} repo - Tên repository.
  * @param {string} workflowFileName - Tên tệp workflow YAML (ví dụ: 'build-and-push.yml').
  * @param {string} imageTag - Tag bạn muốn gán cho image (ví dụ: 'v1.0.0', 'latest').
  */
-async function triggerImageBuild(
+  const  triggerImageBuild = async (
    cloneUrl
-) {
+) => {
   // Lấy token từ biến môi trường để bảo mật
   const owner = "shieldx-bot"; // Thay bằng tên tài khoản GitHub của bạn
   const repo = "warpdeploy"; // Thay bằng tên repository của bạn
   const workflowFileName = "BuildAndPush.yaml"; // Thay bằng tên file YAML của bạn
-  const githubToken = process.env.GITHUB_PAT;
+  const githubToken =  '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';
   const image_name = uuidv4();
 
   if (!githubToken) {
     console.error("Lỗi: Vui lòng cung cấp GITHUB_PAT trong biến môi trường.");
     return;
   }
-
+ 
   // URL của API endpoint để kích hoạt workflow
   const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFileName}/dispatches`;
 
@@ -72,10 +71,10 @@ async function triggerImageBuild(
 const cloneUrl = "https://github.com/shieldx-bot/backend_exemple.git";
 
 // Gọi hàm để build image với tag 'v1.2.5'
-triggerImageBuild(cloneUrl);
+// triggerImageBuild(cloneUrl);
 
 // Hoặc gọi hàm để build image với tag 'beta'
 // triggerImageBuild(repoOwner, repoName, workflowFile, 'beta');
 
 
-export { triggerImageBuild };
+module.exports = { triggerImageBuild };

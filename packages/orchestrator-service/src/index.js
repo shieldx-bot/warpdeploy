@@ -45,7 +45,7 @@ async function testK8sClient() {
 
 // Route để test Kubernetes API
 app.get("/test-orchestrator", async (req, res) => {
-  triggerImageBuild();
+  triggerImageBuild('https://github.com/shieldx-bot/backend_exemple.git');
   res.send("Testing Kubernetes client... Check console for details!");
 });
 
