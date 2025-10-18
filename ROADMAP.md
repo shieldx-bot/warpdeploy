@@ -1,3 +1,6 @@
+# /mnt/d/github/warpdeploy
+
+ 
  Xây dựng một nền tảng PaaS ("Platform as a Service") cá nhân là một dự án cực kỳ tham vọng và là cách tốt nhất để thể hiện sự thông thạo toàn diện về kiến trúc cloud-native. Đây là bản thiết kế và lộ trình chi tiết để bạn tạo ra **"WARPDEPLOY"** trong vòng 2 tháng.
 
 -----
