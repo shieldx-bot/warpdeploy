@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       clone_url:
-        description: 'URL của repository cần clone (vd: https://github.com/user/repo.git)'
+        description: '${{github.event.inputs.clone_url}}'
         required: true
       image_name:
-        description: 'Tên cho image container (vd: my-cool-app)'
+        description: '${{github.event.inputs.image_name}}'
         required: true
         default: 'my-app'
 
