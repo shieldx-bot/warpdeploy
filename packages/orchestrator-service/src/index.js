@@ -1,5 +1,6 @@
 const express = require("express");
 const k8s = require("@kubernetes/client-node"); 
+const { triggerImageBuild } = require("./jobs/build_image_github");
 
 const app = express();
 const PORT = 3002;
@@ -27,6 +28,7 @@ async function testK8sClient() {
   try {
     console.log("Creating namespace...");
     const createRes = await k8sApi.createNamespace({ body: namespace });
+    console.log("createRes:" ,createRes )
     console.log("✅ Created namespace:", createRes.body.metadata.name);
 
     const readRes = await k8sApi.readNamespace(namespace.metadata.name);
@@ -39,9 +41,11 @@ async function testK8sClient() {
   }
 }
 
+
+
 // Route để test Kubernetes API
 app.get("/test-orchestrator", async (req, res) => {
-  testK8sClient();
+  triggerImageBuild();
   res.send("Testing Kubernetes client... Check console for details!");
 });
 
