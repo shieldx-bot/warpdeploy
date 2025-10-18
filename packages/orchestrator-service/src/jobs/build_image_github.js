@@ -16,6 +16,7 @@ const { v4: uuidv4 } = require('uuid');
   const workflowFileName = "BuildAndPush.yaml"; // Thay bằng tên file YAML của bạn
   const githubToken =  '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';
   const image_name = Math.random().toString(36).substring(2, 8);
+  const token_docker= 'dckr_pat_TIE2Tx9tsUk7pXVFH_Jl1l-dOt8'
 // ghcr.io/shieldx-bot/warpdeploy:a684a0b1-7acd-4df1-81d0-e942e2ffbf7e
 
   if (!githubToken) {
@@ -42,7 +43,7 @@ const { v4: uuidv4 } = require('uuid');
           image_name: image_name,
           clone_url: cloneUrl,
           DOCKERHUB_USERNAME: 'shieldxbot',
-          DOCKERHUB_TOKEN: 'dckr_pat_TIE2Tx9tsUk7pXVFH_Jl1l-dOt8'
+          DOCKERHUB_TOKEN: token_docker
         },
       },
       // ---- PHẦN HEADERS ----
