@@ -42,8 +42,8 @@ const { v4: uuidv4 } = require('uuid');
           // Khóa 'image_tag' phải khớp chính xác với tên input trong file YAML
           image_name: image_name,
           clone_url: cloneUrl,
-          DOCKERHUB_USERNAME: 'shieldxbot',
-          DOCKERHUB_TOKEN: token_docker
+          dockerhub_username: 'shieldxbot',
+          dockerhub_token: token_docker
         },
       },
       // ---- PHẦN HEADERS ----
