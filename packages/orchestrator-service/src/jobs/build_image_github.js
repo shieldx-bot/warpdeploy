@@ -14,8 +14,9 @@ const { v4: uuidv4 } = require('uuid');
   const owner = "shieldx-bot"; // Thay bằng tên tài khoản GitHub của bạn
   const repo = "warpdeploy"; // Thay bằng tên repository của bạn
   const workflowFileName = "BuildAndPush.yaml"; // Thay bằng tên file YAML của bạn
-  const githubToken =  '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';
-  const image_name = uuidv4();
+  const githubToken =  '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';
+  const image_name = Math.random().toString(36).substring(2, 8);
+// ghcr.io/shieldx-bot/warpdeploy:a684a0b1-7acd-4df1-81d0-e942e2ffbf7e
 
   if (!githubToken) {
     console.error("Lỗi: Vui lòng cung cấp GITHUB_PAT trong biến môi trường.");
@@ -39,7 +40,9 @@ const { v4: uuidv4 } = require('uuid');
         inputs: {
           // Khóa 'image_tag' phải khớp chính xác với tên input trong file YAML
           image_name: image_name,
-          cloneUrl: cloneUrl,
+          clone_url: cloneUrl,
+          DOCKERHUB_USERNAME: 'shieldxbot',
+          DOCKERHUB_TOKEN: 'dckr_pat_TIE2Tx9tsUk7pXVFH_Jl1l-dOt8'
         },
       },
       // ---- PHẦN HEADERS ----
@@ -55,15 +58,19 @@ const { v4: uuidv4 } = require('uuid');
     // GitHub API trả về status 204 No Content khi thành công
     if (response.status === 204) {
       console.log("Kích hoạt workflow thành công!");
-      console.log(`Image sẽ được build với tag: ${imageTag}`);
+      console.log("Log chi tiết response:", response.data);
+      console.log(`Image sẽ được build với tag: ${image_name}`);
+      return image_name;
     } else {
       console.error(`Kích hoạt thất bại với status code: ${response.status}`);
+      return null;
     }
   } catch (error) {
     console.error(
       "Đã xảy ra lỗi khi gọi GitHub API:",
       error.response ? error.response.data : error.message
     );
+    return null ;
   }
 }
 // --- VÍ DỤ SỬ DỤNG ---
