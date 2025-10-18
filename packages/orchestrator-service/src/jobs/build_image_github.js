@@ -1,4 +1,5 @@
-const axios = require('axios');
+import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Kích hoạt GitHub Action để build và push image Docker.
@@ -7,12 +8,18 @@ const axios = require('axios');
  * @param {string} workflowFileName - Tên tệp workflow YAML (ví dụ: 'build-and-push.yml').
  * @param {string} imageTag - Tag bạn muốn gán cho image (ví dụ: 'v1.0.0', 'latest').
  */
-async function triggerImageBuild(owner, repo, workflowFileName, imageTag) {
+async function triggerImageBuild(
+   cloneUrl
+) {
   // Lấy token từ biến môi trường để bảo mật
+  const owner = "shieldx-bot"; // Thay bằng tên tài khoản GitHub của bạn
+  const repo = "warpdeploy"; // Thay bằng tên repository của bạn
+  const workflowFileName = "BuildAndPush.yaml"; // Thay bằng tên file YAML của bạn
   const githubToken = process.env.GITHUB_PAT;
+  const image_name = uuidv4();
 
   if (!githubToken) {
-    console.error('Lỗi: Vui lòng cung cấp GITHUB_PAT trong biến môi trường.');
+    console.error("Lỗi: Vui lòng cung cấp GITHUB_PAT trong biến môi trường.");
     return;
   }
 
@@ -27,42 +34,48 @@ async function triggerImageBuild(owner, repo, workflowFileName, imageTag) {
       // ---- PHẦN BODY CỦA YÊU CẦU ----
       {
         // Chạy workflow trên phiên bản code của nhánh 'main'
-        ref: 'main', 
-        
+        ref: "main",
+
         // Cung cấp các giá trị cho các 'inputs' đã định nghĩa trong YAML
         inputs: {
           // Khóa 'image_tag' phải khớp chính xác với tên input trong file YAML
-          image_tag: imageTag 
-        }
+          image_name: image_name,
+          cloneUrl: cloneUrl,
+        },
       },
       // ---- PHẦN HEADERS ----
       {
         headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          'Authorization': `Bearer ${githubToken}`,
-          'Content-Type': 'application/json',
+          Accept: "application/vnd.github.v3+json",
+          Authorization: `Bearer ${githubToken}`,
+          "Content-Type": "application/json",
         },
       }
     );
 
     // GitHub API trả về status 204 No Content khi thành công
     if (response.status === 204) {
-      console.log('Kích hoạt workflow thành công!');
+      console.log("Kích hoạt workflow thành công!");
       console.log(`Image sẽ được build với tag: ${imageTag}`);
     } else {
       console.error(`Kích hoạt thất bại với status code: ${response.status}`);
     }
   } catch (error) {
-    console.error('Đã xảy ra lỗi khi gọi GitHub API:', error.response ? error.response.data : error.message);
+    console.error(
+      "Đã xảy ra lỗi khi gọi GitHub API:",
+      error.response ? error.response.data : error.message
+    );
   }
 }
 // --- VÍ DỤ SỬ DỤNG ---
-const repoOwner = 'shieldx-bot';       // Thay bằng tên tài khoản GitHub của bạn
-const repoName = 'warpdeploy';          // Thay bằng tên repository của bạn
-const workflowFile = 'BuildAndPush.yaml'; // Thay bằng tên file YAML của bạn
+
+const cloneUrl = "https://github.com/shieldx-bot/backend_exemple.git";
 
 // Gọi hàm để build image với tag 'v1.2.5'
-triggerImageBuild(repoOwner, repoName, workflowFile, 'v1.2.5');
+triggerImageBuild(cloneUrl);
 
 // Hoặc gọi hàm để build image với tag 'beta'
 // triggerImageBuild(repoOwner, repoName, workflowFile, 'beta');
+
+
+export { triggerImageBuild };

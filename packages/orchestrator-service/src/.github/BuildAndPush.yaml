@@ -1,63 +1,55 @@
 # Tên của workflow
-name: Build Image And Push to GitHub Container Registry
+name: Build Image From Repository URL
 
+# Kích hoạt workflow thủ công
 on:
-  # Kích hoạt khi có code được push lên nhánh main
-  push:
-    branches: ["main"]
-  # Cho phép kích hoạt thủ công và định nghĩa các tham số đầu vào
   workflow_dispatch:
+    # Định nghĩa các tham số đầu vào sẽ được yêu cầu khi chạy
     inputs:
-      # Bạn có thể định nghĩa các tham số nếu cần, ví dụ:
-      image_tag:
-        description: 'Tag cho image (ví dụ: latest, v1.0)'
+      clone_url:
+        description: 'URL của repository cần clone (vd: https://github.com/user/repo.git)'
         required: true
-        default: 'latest'
+      image_name:
+        description: 'Tên cho image container (vd: my-cool-app)'
+        required: true
+        default: 'my-app'
 
 jobs:
   build-and-push:
-    # Chạy trên môi trường Ubuntu mới nhất
+    # Sử dụng máy ảo Ubuntu mới nhất
     runs-on: ubuntu-latest
-    # Cấp quyền cho GITHUB_TOKEN để ghi vào packages (registry)
+    # Cấp quyền cho GITHUB_TOKEN để có thể ghi vào Packages
     permissions:
       contents: read
       packages: write
 
     steps:
-      # Bước 1: Lấy mã nguồn của repository về môi trường chạy
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # Bước 2: Cài đặt pack-cli
-      # (Gom các lệnh cài đặt vào một step cho gọn gàng)
-      - name: Install Pack CLI
-        run: |
-          sudo add-apt-repository ppa:cncf-buildpacks/pack-cli -y
-          sudo apt-get update
-          sudo apt-get install pack-cli -y
-      
-      # Bước 3: Đăng nhập vào GitHub Container Registry (GHCR)
-      
-      - name: Log in to the GitHub Container Registry
+      # Bước 1: Đăng nhập vào GitHub Container Registry (GHCR)
+      - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          # ${{ github.actor }} là username của người kích hoạt workflow
           username: ${{ github.actor }}
-          # GITHUB_TOKEN có quyền push lên registry của chính repo này
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Bước 4: Build và push image bằng pack
-      # Tất cả các lệnh liên quan nên ở trong cùng một step
-      - name: Build and push image to GHCR
+      # Bước 2: Cài đặt Pack CLI
+      - name: Install pack-cli
         run: |
-          # Sử dụng các biến có sẵn của GitHub để tạo tên image
-          # ghcr.io/OWNER/REPO_NAME:TAG
-          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-          
-          echo "Building and pushing image: ${IMAGE_NAME}:${{ github.event.inputs.image_tag }}"
-          
-          pack build ${IMAGE_NAME}:${{ github.event.inputs.image_tag }} \
+          sudo add-apt-repository ppa:cncf-buildpacks/pack-cli -y
+          sudo apt-get update
+          sudo apt-get install pack-cli
+
+      # Bước 3: Clone repository từ URL đã cung cấp
+      # Chúng ta sẽ clone vào một thư mục cố định tên là "source-code"
+      - name: Clone external repository
+        run: git clone ${{ github.event.inputs.clone_url }} source-code
+
+      # Bước 4: Xây dựng và đẩy image từ mã nguồn vừa clone
+      # quan trọng: Sử dụng "working-directory" để chạy lệnh bên trong thư mục vừa clone
+      - name: Build and push image with Buildpacks
+        working-directory: ./source-code
+        run: |
+          pack build ghcr.io/${{ github.repository_owner }}/${{ github.event.inputs.image_name }}:latest \
+            --builder cnbs/sample-builder:noble \
             --path . \
-            --builder gcr.io/buildpacks/builder:v1 \
             --publish
