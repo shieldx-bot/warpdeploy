@@ -40,6 +40,7 @@ jobs:
           pack config default-builder heroku/builder:24
           pack builder inspect
           sudo systemctl restart docker
+          docker system prune -a -f
 
 
  
