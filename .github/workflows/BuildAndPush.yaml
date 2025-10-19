@@ -37,7 +37,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install pack-cli
           pack --version
-          pack config default-builder paketobuildpacks/builder-jammy-base
+          pack config default-builder heroku/builder:24
           pack builder inspect
 
 
