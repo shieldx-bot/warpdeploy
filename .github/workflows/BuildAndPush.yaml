@@ -74,4 +74,7 @@ jobs:
       # bước 7: Clean up
       - name: Clean up cloned repository
         if: always()
-        run: rm -rf ./${{ github.event.inputs.image_name }}
+        run: | 
+         rm -rf ./${{ github.event.inputs.image_name }}
+         docker system prune -a -f
+         
