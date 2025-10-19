@@ -51,10 +51,10 @@ jobs:
         working-directory: ./${{ github.event.inputs.image_name }}
         run: |
           IMAGE_NAME=${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest
-          echo "🚀 Building and pushing image: $IMAGE_NAME"
-          pack build "$IMAGE_NAME" \
-            --path . \
-            --builder heroku/builder:24 \
+          echo "Building and pushing image: $IMAGE_NAME"
+          pack build ${{github.event.inputs.image_name }} 
+            --path  ${{github.event.inputs.image_name }}   
+            --builder heroku/builder:24
             --publish \
             --network host \
             --pull-policy if-not-present \
