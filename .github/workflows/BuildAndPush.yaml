@@ -39,11 +39,11 @@ jobs:
 
       # Bước 3: Clone repo cần build
       - name: Clone external repository
-        run: git clone ${{ github.event.inputs.clone_url }} source-code
+        run: git clone ${{ github.event.inputs.clone_url }} ${{ github.event.inputs.image_name }}
 
       # Bước 4: Build và push image
       - name: Build and push image with Buildpacks
-        working-directory: ./source-code
+        working-directory: ./${{ github.event.inputs.image_name }}
         run: |
           IMAGE_NAME=${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest
           echo "Building and pushing image: $IMAGE_NAME"
@@ -52,3 +52,7 @@ jobs:
             --path . \
             --publish
             --pull-policy never
+      # Bước 5: Dọn dẹp  mã nguồn  
+      - name: Clean up cloned repository
+        if: always()
+        run: rm -rf ./${{ github.event.inputs.image_name }}
