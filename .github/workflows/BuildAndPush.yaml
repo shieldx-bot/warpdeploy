@@ -51,3 +51,4 @@ jobs:
             --builder cnbs/sample-builder:noble \
             --path . \
             --publish
+            --pull-policy never
