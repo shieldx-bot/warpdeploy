@@ -45,13 +45,14 @@ jobs:
       - name: Build and push image with Buildpacks
         working-directory: ./${{ github.event.inputs.image_name }}
         run: |
-          IMAGE_NAME=docker.io/${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest
+          IMAGE_NAME=${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest
           echo "Building and pushing image: $IMAGE_NAME"
           pack build $IMAGE_NAME \
             --builder cnbs/sample-builder:noble \
             --path . \
             --publish
-       # Bước 5: Dọn dẹp  mã nguồn  
+            --pull-policy never
+      # Bước 5: Dọn dẹp  mã nguồn  
       - name: Clean up cloned repository
         if: always()
         run: rm -rf ./${{ github.event.inputs.image_name }}
