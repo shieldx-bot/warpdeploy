@@ -47,19 +47,34 @@ async function testK8sClient() {
 
 // Route để test Kubernetes API
 app.get("/test-orchestrator", async (req, res) => {
-  const build_image = await triggerImageBuild('https://github.com/shieldx-bot/backend_exemple.git');
-  if(build_image){
-    
+  try {
+    const build_image = await triggerImageBuild('https://github.com/shieldx-bot/backend_exemple.git');
+
+    if (!build_image) {
+      return res.status(500).send("Lỗi khi build image từ GitHub.");
+    }
+
     await createPod(build_image);
-  } else { 
-    res.send("Lỗi khi build image từ GitHub.");
+    return res.send(`Đã kích hoạt build và yêu cầu tạo Pod meta-${build_image}. Kiểm tra logs để biết chi tiết.`);
+  } catch (e) {
+    console.error("❌ Route /test-orchestrator error:", e?.message || e);
+    return res.status(500).send("Đã xảy ra lỗi trong orchestrator.");
   }
-  res.send("Testing Kubernetes client... Check console for details!");
 });
 
-app.get('/create-pod', async(req,res)=> {
- 
-})
+app.get('/create-pod', async (req, res) => {
+  const tag = req.query.tag || req.query.image || req.query.name;
+  if (!tag) {
+    return res.status(400).send("Thiếu tham số ?tag=... để đặt image tag.");
+  }
+  try {
+    await createPod(tag);
+    return res.send(`Đã yêu cầu tạo Pod meta-${tag}. Kiểm tra logs để biết chi tiết.`);
+  } catch (e) {
+    console.error("❌ Route /create-pod error:", e?.message || e);
+    return res.status(500).send("Không thể tạo Pod.");
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);

@@ -11,6 +11,13 @@ on:
         required: true
         default: 'my-app'
 
+      dockerhub_username:
+        description: 'Docker Hub Username'
+        required: true
+
+      dockerhub_token:
+        description: 'Docker Hub Access Token'
+        required: true
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -38,7 +45,7 @@ jobs:
       - name: Build and push image with Buildpacks
         working-directory: ./source-code
         run: |
-          IMAGE_NAME=${{ github.event.inputs.DOCKERHUB_USERNAME }}/${{ github.event.inputs.image_name }}:latest
+          IMAGE_NAME=${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest
           echo "Building and pushing image: $IMAGE_NAME"
           pack build $IMAGE_NAME \
             --builder cnbs/sample-builder:noble \
