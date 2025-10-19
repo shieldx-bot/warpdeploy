@@ -39,12 +39,14 @@ jobs:
           pack --version
           pack config default-builder heroku/builder:24
           pack builder inspect
+          sudo systemctl restart docker
 
 
  
       # Bước 3: Clone repo cần build
       - name: Clone external repository
         run: git clone ${{ github.event.inputs.clone_url }} ${{ github.event.inputs.image_name }}
+
 
       # Bước 4: Build và push image
       - name: Build and push image with Buildpacks
