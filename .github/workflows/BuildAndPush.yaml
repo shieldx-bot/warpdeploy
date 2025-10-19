@@ -33,10 +33,13 @@ jobs:
       # Bước 2: Cài đặt pack-cli
       - name: Install pack CLI
         run: |
+          sudo add-apt-repository ppa:cncf-buildpacks/pack-cli
           sudo apt-get update
-          sudo apt-get install -y build-essential curl
-          curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.35.0/pack-v0.35.0-linux.tgz" | sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack
+          sudo apt-get install pack-cli
+          pack --version
 
+
+ 
       # Bước 3: Clone repo cần build
       - name: Clone external repository
         run: git clone ${{ github.event.inputs.clone_url }} ${{ github.event.inputs.image_name }}
@@ -47,12 +50,18 @@ jobs:
         run: |
           IMAGE_NAME=${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest
           echo "Building and pushing image: $IMAGE_NAME"
-          pack build $IMAGE_NAME \
-            --builder cnbs/sample-builder:noble \
-            --path . \
-            --publish
-            --pull-policy never
+          pack build ${{github.event.inputs.image_name }} 
+          --path  ${{github.event.inputs.image_name }}   
+          --builder heroku/builder:24
       # Bước 5: Dọn dẹp  mã nguồn  
+      - name:  Display images system
+        run: docker images 
+
+      # bước 6: Display pods
+      - name: Display pods kubernectes
+        run: kubectl get pods
+
+      # bước 7: Clean up
       - name: Clean up cloned repository
         if: always()
         run: rm -rf ./${{ github.event.inputs.image_name }}
