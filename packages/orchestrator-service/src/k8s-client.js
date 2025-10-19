@@ -16,7 +16,7 @@ async function createPod(url_image) {
       // imagePullSecrets must be an array of LocalObjectReference
       imagePullSecrets: [
         {
-          name: "ghcr-secret",
+          name: "secret-warm",
         },
       ],
       containers: [
