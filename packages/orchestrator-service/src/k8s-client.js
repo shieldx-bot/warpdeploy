@@ -4,7 +4,7 @@ const kc = new k8s.KubeConfig();
 kc.loadFromDefault(); // đọc ~/.kube/config
 const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
-async function createPod(url_image) {
+const createPod = async(url_image)=> {
   const image = `shieldxbot/${url_image}:latest`;
   console.log("Creating pod with name:", url_image);
 
