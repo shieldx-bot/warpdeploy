@@ -53,16 +53,16 @@ jobs:
       - name: Build and push image with Buildpacks
         working-directory: ./${{ github.event.inputs.image_name }}
         run: |
-          IMAGE_NAME=${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest
+          set -euo pipefail
+          export DOCKER_CONFIG="$HOME/.docker"
+          IMAGE_NAME=docker.io/${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest
           echo "Building and pushing image: $IMAGE_NAME"
-          pack build "$IMAGE_NAME" \            
+          pack build "$IMAGE_NAME" \
             --path . \
             --builder heroku/builder:24 \
             --publish \
             --network host \
-            --pull-policy if-not-present \
-          
-            
+            --pull-policy if-not-present
           echo "✅ Build completed successfully."
       # Bước 5: Dọn dẹp  mã nguồn  
       - name:  Display images system
