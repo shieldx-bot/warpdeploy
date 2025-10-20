@@ -55,7 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           export DOCKER_CONFIG="$HOME/.docker"
-          IMAGE_NAME=docker.io/${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest
+          IMAGE_NAME=${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest
           echo "Building and pushing image: $IMAGE_NAME"
           pack build "$IMAGE_NAME" \
             --path . \
