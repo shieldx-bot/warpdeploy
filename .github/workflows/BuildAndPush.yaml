@@ -31,7 +31,7 @@ jobs:
           password: ${{ github.event.inputs.dockerhub_token }}
 
       # Bước 2: Cài đặt pack-cli
-      - name: Install pack CLI
+      - name: Install pack CLI and Kubectl K8S
         run: |
           sudo add-apt-repository ppa:cncf-buildpacks/pack-cli
           sudo apt-get update
@@ -41,6 +41,10 @@ jobs:
           pack builder inspect
           sudo systemctl restart docker
           docker system prune -a -f
+          # Tải file thực thi kubectl
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+          kubectl version --client
 
 
  
