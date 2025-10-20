@@ -61,7 +61,8 @@ jobs:
             --publish \
             --network host \
             --pull-policy if-not-present \
-            --env NODE_ENV=production
+          
+            
           echo "✅ Build completed successfully."
       # Bước 5: Dọn dẹp  mã nguồn  
       - name:  Display images system
