@@ -78,4 +78,6 @@ jobs:
         run: | 
          rm -rf ./${{ github.event.inputs.image_name }}
          docker system prune -a -f
+         df -h 
+         free -h
 
