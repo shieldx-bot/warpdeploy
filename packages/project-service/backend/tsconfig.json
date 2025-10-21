@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    // File Layout
+    "rootDir": "./src",                        // ✅ Đã kích hoạt: Chỉ định thư mục gốc chứa mã nguồn
+    "outDir": "./dist",                        // ✅ Đã kích hoạt: Chỉ định thư mục đầu ra cho file JavaScript
+
+    // Environment Settings
+    "module": "commonjs",                      // ✏️ Thay đổi để phù hợp với package.json của bạn
+    "target": "ES2022",                        // Sử dụng một phiên bản cụ thể thay vì "esnext" để ổn định hơn
+    
+    // Stricter Typechecking Options
+    "strict": true,                            // Bật tất cả các tùy chọn kiểm tra kiểu nghiêm ngặt
+    "esModuleInterop": true,                   // Cho phép tương tác tốt hơn giữa các module
+    "skipLibCheck": true,                      // Bỏ qua việc kiểm tra kiểu của các thư viện
+    "forceConsistentCasingInFileNames": true,  // Đảm bảo tên file được tham chiếu nhất quán
+
+    // Other Outputs
+    "sourceMap": true                          // Tạo source map để dễ dàng debug
+  },
+  "include": ["src/**/*"]                      // ✅ Đã thêm: Chỉ định rằng TypeScript sẽ biên dịch mọi thứ trong thư mục 'src'
+}
