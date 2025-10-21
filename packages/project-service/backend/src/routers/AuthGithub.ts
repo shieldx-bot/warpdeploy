@@ -8,7 +8,7 @@ const axios = require( 'axios');
 
 
 router.post( 
-    '/auth/github/get_access_token', async (req: Request, res: Response)=> { 
+    '/get_access_token', async (req: Request, res: Response)=> { 
          const {code}:any = req.body;
          const access_token_response = await axios.post( 
            "https://github.com/login/oauth/access_token" + code

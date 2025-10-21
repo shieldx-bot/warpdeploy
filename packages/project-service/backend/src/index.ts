@@ -7,7 +7,7 @@
   const cors = require('cors');
   app.use(cors(
     { 
-      origin: `${process.env.DOMAIN_FRONTEND}:3000`,
+      origin: `${process.env.DOMAIN_FRONTEND}:5173`,
     }
   ));
   app.get('/', (req: Request, res: Response) => {
@@ -15,7 +15,7 @@
   });
 
   const AuthGithubRouter = require('./routers/AuthGithub');
-  app.use('/auth/GetAccessTokenGithub', AuthGithubRouter);
+  app.use('/github', AuthGithubRouter);
 
   app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
