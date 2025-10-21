@@ -3,7 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express = require('express');
 const app = express();
 const port = process.env.PORT_SERVICE_BACKEND || 5000;
-console.log('PORT_SERVICE_BACKEND', port);
+app.use(express.json());
+const cors = require('cors');
+app.use(cors({
+    origin: `${process.env.DOMAIN_FRONTEND}:3000`,
+}));
 app.get('/', (req, res) => {
     res.send('Hello from TypeScript Express!');
 });
