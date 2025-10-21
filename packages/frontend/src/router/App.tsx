@@ -3,8 +3,7 @@ import Dashboard from '../components/dashboard/index';
 import { Route, Routes } from 'react-router-dom';
 
 function App() {
- alert("Welcome to WarmDeploy!");
-  return (
+   return (
     <div className='App'>
       <Routes>
         <Route path="/dashboard" element={<Dashboard/>}  />
