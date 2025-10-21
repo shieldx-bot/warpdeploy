@@ -7,7 +7,7 @@
   const cors = require('cors');
   app.use(cors(
     { 
-      origin: `${process.env.DOMAIN_FRONTEND}:5173`,
+      origin: 'http://localhost:5173' ,
     }
   ));
   app.get('/', (req: Request, res: Response) => {

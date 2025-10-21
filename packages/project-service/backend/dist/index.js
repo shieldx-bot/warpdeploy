@@ -6,7 +6,7 @@ const port = process.env.PORT_SERVICE_BACKEND || 5000;
 app.use(express.json());
 const cors = require('cors');
 app.use(cors({
-    origin: `${process.env.DOMAIN_FRONTEND}:5173`,
+    origin: 'http://localhost:5173',
 }));
 app.get('/', (req, res) => {
     res.send('Hello from TypeScript Express!');
