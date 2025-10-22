@@ -35,14 +35,31 @@ router.post(
         }
         return res.json(message)
       }
+      const repo = await axios.get('https://api.github.com/user/repos?per_page=100', {
+        headers: { // Sửa "Headers" thành "headers"
+          Authorization: `bearer ${access_token_response.data.access_token}`,
+          Accept: 'application/vnd.github.v3+json',
+          "X-GitHub-Api-Version": "2022-11-28"
+        }
+      });
 
 
-      return res.json(access_token_response.data)
+      return res.status(200).json({
+        status: 'success',
+        access_token: access_token_response.data.access_token,
+        dataRepo: repo.data
+      })
     } catch (error) {
       console.error("Error in /get_access_token:", error)
     }
   }
 )
 
+
+
+
+
+
+ 
 
 module.exports = router;
