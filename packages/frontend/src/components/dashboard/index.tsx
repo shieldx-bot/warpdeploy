@@ -31,38 +31,12 @@ export default function Dashboard() {
           console.log(response.data);
           localStorage.setItem('access_token', response.data.access_token);
 
-          type RepoFromApi = {
-            id: number;
-            name: string;
-            full_name: string;
-            private: boolean;
-            html_url: string;
-          };
-
-          type Repo = {
-            id: number;
-            name: string;
-            fullname: string;
-            private: boolean;
-            url: string;
-          };
-           const repos: Repo[] = []
-          
-
-           response.data.datRepo?.map((item: RepoFromApi) => {
-             const data =  {
-              id: item.id,
-              name: item.name,
-              fullname: item.full_name,
-              private: item.private,
-              url: item.html_url,
-            };
-            repos.push(data);
-          });
-          console.log("Repos:", repos);
+       
+           
+ 
 
           // optionally persist or set state with repos
-          localStorage.setItem('repos', JSON.stringify(repos));
+          localStorage.setItem('repos', JSON.stringify(response.data.dataRepo));
 
         } else {
           console.error("Error from server:", response.data);
@@ -99,6 +73,9 @@ export default function Dashboard() {
     <div className='w-full h-full  '>
       <h1 style={{ color: 'red' }}>Hello  World</h1>
       <button className='w-20 h-5 rounded-xl' onClick={loginWithGithub}>Login with GitHub</button>
+
+
+      
     </div>
   )
 }
