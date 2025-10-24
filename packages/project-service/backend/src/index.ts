@@ -1,5 +1,6 @@
   const express = require('express');
   import type  { Express, Request, Response }  from 'express'
+import { connectDB } from './database/connectDB';
   const app: Express = express();
   const port = process.env.PORT_SERVICE_BACKEND || 5000;
   
@@ -10,11 +11,12 @@
       origin: 'http://localhost:5173' ,
     }
   ));
+  connectDB()
   app.get('/', (req: Request, res: Response) => {
     res.send('Hello from TypeScript Express!');
   });
 
-  const AuthGithubRouter = require('./routers/AuthGithub');
+  const AuthGithubRouter = require('./routers/auth/AuthGithub');
   app.use('/github', AuthGithubRouter);
 
   app.listen(port, () => {
