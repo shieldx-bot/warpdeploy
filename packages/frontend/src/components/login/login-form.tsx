@@ -15,11 +15,28 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-
+import React, {useState} from "react"
+import axios from "axios"
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  const login = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    try {
+      const response = await axios.post('/api/users/login', { email, password })
+      if (response.data.status === 'success') {
+        console.log('Login successful', response.data)
+        window.localStorage.setItem('token', response.data.token)
+        window.location.href = '/dashboard'
+      }
+    } catch (err) {
+      console.error('Login failed', err)
+    }
+  }
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -57,6 +74,8 @@ export function LoginForm({
                 <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
                   id="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value)}}
                   type="email"
                   placeholder="m@example.com"
                   required
@@ -72,10 +91,13 @@ export function LoginForm({
                     Forgot your password?
                   </a>
                 </div>
-                <Input id="password" type="password" required />
+                <Input
+                 value={password}
+                 onChange={(e)=> { setPassword(e.target.value)}}
+                 id="password" type="password" required />
               </Field>
               <Field>
-                <Button type="submit">Login</Button>
+                <Button type="button" onClick={login}>Login</Button>
                 <FieldDescription className="text-center">
                   Don&apos;t have an account? <a href="#">Sign up</a>
                 </FieldDescription>
