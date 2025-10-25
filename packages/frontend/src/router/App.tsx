@@ -4,7 +4,7 @@ import LoginPage from '@/components/login/index';
 import Dashboard from '@/components/dashboard/index';
 import SignupPage from '@/components/signup';
 import OTPPage from '@/components/otp';
-import Projects from '@/components/projects';
+import Imports from '@/components/ImportRepos';
  
 function App() {
    return (
@@ -14,7 +14,7 @@ function App() {
         <Route path="/login" element={<LoginPage/>}  />
         <Route path="/signup" element={<SignupPage/>}  />
         <Route path="/verify-otp" element={<OTPPage/>}  />
-        <Route path="/Projects" element={<Projects/>}  />
+        <Route path="/import-repos" element={<Imports/>}  />
       </Routes>
     </div>
   )
