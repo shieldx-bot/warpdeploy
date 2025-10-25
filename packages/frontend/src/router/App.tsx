@@ -4,6 +4,7 @@ import LoginPage from '@/components/login/index';
 import Dashboard from '@/components/dashboard/index';
 import SignupPage from '@/components/signup';
 import OTPPage from '@/components/otp';
+import Projects from '@/components/projects';
  
 function App() {
    return (
@@ -12,7 +13,8 @@ function App() {
         <Route path="/dashboard" element={<Dashboard/>}  />
         <Route path="/login" element={<LoginPage/>}  />
         <Route path="/signup" element={<SignupPage/>}  />
-        <Route path="/otp" element={<OTPPage/>}  />
+        <Route path="/verify-otp" element={<OTPPage/>}  />
+        <Route path="/dashboard/Projects" element={<Projects/>}  />
       </Routes>
     </div>
   )
