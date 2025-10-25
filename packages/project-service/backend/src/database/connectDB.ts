@@ -1,26 +1,31 @@
- const sqlConfig = require('./config').sqlConfig;
-import * as sql from 'mssql';
-const fs = require('fs');
-const path = require('path');
-export const connectDB = async() => {
-    try { 
+import sql from 'mssql';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { sqlConfig } from './config.js';
+
+export const connectDB = async () => {
+    try {
         const pool = await sql.connect(sqlConfig);
-        const schemaFilePath  = path.join(__dirname, 'schema.sql');
-        let sqlSchema = fs.readFileSync(schemaFilePath, 'utf8');
-        pool.query(sqlSchema, (err: any, result: any) => { 
-            if(err){ 
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const schemaFilePath = path.join(__dirname, 'schema.sql');
+        const sqlSchema = fs.readFileSync(schemaFilePath, 'utf8');
+        pool.query(sqlSchema, (err: any) => {
+            if (err) {
                 console.error('Error executing SQL schema:', err);
-            } 
+            }
             console.log('SQL schema executed successfully.');
-    
-        } );
-        if(pool.connected){ 
-          console.log("Database Connected")
-        } else { 
-            console.log("Database Not Connected")
+        });
+        if (pool.connected) {
+            console.log('Database Connected');
+        } else {
+            console.log('Database Not Connected');
         }
-    } catch (error){ 
-        console.log("Database Connection Failed: ", error)
+        return pool;
+    } catch (error) {
+        console.log('Database Connection Failed: ', error);
     }
-}
+};
+
 

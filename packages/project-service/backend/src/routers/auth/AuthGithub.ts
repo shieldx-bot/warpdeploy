@@ -1,9 +1,8 @@
-const Router = require('express');
-import { type Request, type Response } from 'express';
-const router = Router();
-const axios = require('axios');
+import express, { type Request, type Response } from 'express';
+import axios from 'axios';
 import dotenv from 'dotenv';
 dotenv.config();
+const router = express.Router();
 
 
 
@@ -16,7 +15,7 @@ router.post(
       const client_id = 'Ov23lik3HiCw8svL1G5f';
       const client_secret = 'e54c53ca22866af6b7cee6c0dc0e0fb92d2365b5';
       console.log("Client ID and Secret loaded from env", client_id);
-      const access_token_response = await axios.post(
+      const access_token_response = await axios.post<any>(
         "https://github.com/login/oauth/access_token", {
         client_id: client_id,
         client_secret: client_secret,
@@ -56,10 +55,4 @@ router.post(
 )
 
 
-
-
-
-
- 
-
-module.exports = router;
+export default router;

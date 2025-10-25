@@ -1,5 +1,5 @@
-const dotenv = require('dotenv')
-const Pool = require('pg-pool')
+import dotenv from 'dotenv';
+import Pool from 'pg-pool';
 
 dotenv.config();
 
@@ -23,4 +23,4 @@ pool.on('error', (err: Error)=> {
      console.error("❌ Unexpected error on idle client")
 })
 
-module.exports = pool
+export default pool
