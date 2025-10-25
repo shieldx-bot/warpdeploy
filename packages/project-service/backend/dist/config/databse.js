@@ -1,6 +1,5 @@
-"use strict";
-const dotenv = require('dotenv');
-const Pool = require('pg-pool');
+import dotenv from 'dotenv';
+import Pool from 'pg-pool';
 dotenv.config();
 const pool = new Pool({
     host: process.env.DB_HOST,
@@ -18,5 +17,5 @@ pool.on('connect', () => {
 pool.on('error', (err) => {
     console.error("❌ Unexpected error on idle client");
 });
-module.exports = pool;
+export default pool;
 //# sourceMappingURL=databse.js.map

@@ -1,13 +1,8 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const Router = require('express');
-const router = Router();
-const axios = require('axios');
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
+import express from 'express';
+import axios from 'axios';
+import dotenv from 'dotenv';
+dotenv.config();
+const router = express.Router();
 router.post('/get_access_token', async (req, res) => {
     const { code } = req.body;
     console.log("Received code:", code);
@@ -49,5 +44,5 @@ router.post('/get_access_token', async (req, res) => {
         console.error("Error in /get_access_token:", error);
     }
 });
-module.exports = router;
+export default router;
 //# sourceMappingURL=AuthGithub.js.map
