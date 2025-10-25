@@ -1,8 +1,8 @@
-import * as sql from 'mssql';
- 
-export const  sqlConfig: sql.config = { 
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
+import sql from 'mssql';
+
+export const sqlConfig: sql.config = {
+    user: process.env.DB_USER || 'sa',
+    password: process.env.DB_PASSWORD || 'Anh12345@',
     server: process.env.DB_SERVER || 'localhost',
     database: process.env.DB_NAME,
     options: { 
@@ -17,3 +17,12 @@ export const  sqlConfig: sql.config = {
         min: process.env.DB_POOL_MIN ? Number(process.env.DB_POOL_MIN) : 0,        
     }
 }
+// Avoid crashing the process at import time if DB is down; consumers can await and handle null
+export const pool: Promise<sql.ConnectionPool | null> = sql
+    .connect(sqlConfig)
+    .catch((err) => {
+        console.error('MSSQL connection failed:', err);
+        return null as any;
+    });
+
+    
