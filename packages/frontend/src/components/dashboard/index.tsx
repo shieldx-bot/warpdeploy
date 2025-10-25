@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, {  useEffect, useState } from 'react'
 import axios from 'axios';
 import { AppSidebar } from "@/components/app-sidebar"
 import { ChartAreaInteractive } from "@/components/dashboard/chart-area-interactive"
@@ -10,6 +10,35 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { data } from './data';
+
+
+import {
+ 
+    HardDriveUpload,
+   ArrowUpDown,
+   Globe,
+   Cpu,
+   Download,
+   CreditCard,
+   Zap,
+   Timer,
+   MemoryStick,
+   SquareActivity,
+   
+    
+} from "lucide-react"
+import {
+  Command,
+  
+  CommandGroup,
+   
+  CommandItem,
+  CommandList,
+   CommandShortcut,
+} from "@/components/ui/command"
+ 
+
+
 export default function Dashboard() {
   const [hasGetAccess, setHasGetAccess] = useState(false)
   const query_String = window.location.search;
@@ -99,6 +128,80 @@ export default function Dashboard() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <SectionCards />
+              <div className='px-4 lg:px-6'>
+                 <Command className="rounded-lg border shadow-md md:min-w-[450px]">
+       <CommandList>
+        <CommandGroup heading="Usage ">
+          <CommandItem>
+            <ArrowUpDown/>
+            <span>Fast Data Transfer</span>
+            <CommandShortcut>0 / 100GB</CommandShortcut>
+          </CommandItem>
+          <CommandItem>
+            <HardDriveUpload />
+            <span>Fast Origin Transfer</span>
+            <CommandShortcut>0 / 10GB</CommandShortcut>
+          </CommandItem>
+          <CommandItem>
+            <Globe />
+            <span>Edge Requests</span>
+            <CommandShortcut>0 / 1M</CommandShortcut>
+          </CommandItem>
+
+             <CommandItem>
+            <Cpu />
+            <span>Edge Request CPU Duration</span>
+            <CommandShortcut>0 / 1h</CommandShortcut>
+          </CommandItem>
+
+             <CommandItem>
+            <Download />
+            <span>ISR Reads</span>
+            <CommandShortcut>0 / 1M</CommandShortcut>
+          </CommandItem>
+
+
+
+  <CommandItem>
+            <CreditCard />
+            <span>ISR Writes</span>
+            <CommandShortcut>0 / 200k</CommandShortcut>
+          </CommandItem>
+
+
+
+            <CommandItem>
+            <Zap/>
+            <span>Function Invocations</span>
+            <CommandShortcut>0 / 1M</CommandShortcut>
+          </CommandItem>
+
+
+            <CommandItem>
+            <Timer />
+            <span>Function Duration</span>
+            <CommandShortcut>0 / 100GB-Hrs</CommandShortcut>
+          </CommandItem>
+
+            <CommandItem>
+           <MemoryStick />
+            <span>Fluid Provisioned Memory</span>
+            <CommandShortcut>0 / 300GB-Hrs</CommandShortcut>
+          </CommandItem>
+
+            <CommandItem>
+            <SquareActivity />
+            <span>Fluid Active CPU</span>
+            <CommandShortcut>0 / 4h</CommandShortcut>
+          </CommandItem>
+
+
+ 
+        </CommandGroup>
+      </CommandList>
+    </Command>
+
+              </div>
               <div className="px-4 lg:px-6">
                 <ChartAreaInteractive />
               </div>

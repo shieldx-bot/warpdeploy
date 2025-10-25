@@ -44,8 +44,8 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Projects",
-      url: "projects",
+      title: "Import Repos",
+      url: "/import-repos",
       icon: IconListDetails,
     },
     {
