@@ -6,15 +6,22 @@ create  table if  not exists VerifyOtp (
     email varchar(255) not null, 
     otp_code varchar(6) not null,
     created_at datetime  default current_timestamp,
-    expires_at datetime not null,
+    expires_at datetime default (date_add(current_timestamp,interval 10 minute)),
     used boolean default false,
     index (email)
 )
+-- create strigger after insert on VerifyOtp
+-- for each row 
+-- begin
+--     set new.expires_at = date_add(new.created_at, interval 10 minute);
+-- end;
+
 go
 create table if not exists Users ( 
     email  varchar(255) primary key, 
-    username varchar not null,
+    username varchar not null
     password_hash varchar(255) not null,
+    role char(30) default 'users'
     created_at datetime default current_timestamp,
     updated_at datetime default current_timestamp on update current_timestamp, 
     github_username varchar(255),
