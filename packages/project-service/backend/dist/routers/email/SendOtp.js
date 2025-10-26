@@ -1,11 +1,7 @@
 import nodemailer from 'nodemailer';
 import { google } from 'googleapis';
 import express from 'express';
-import { pool } from '../../database/config.js';
-import dotenv from 'dotenv';
-dotenv.config();
 const router = express.Router();
-const db = pool;
 const oAuth2Client = new google.auth.OAuth2(process.env.CLIENT_ID, process.env.CLIENT_SECRET, process.env.REDIRECT_URI);
 oAuth2Client.setCredentials({
     refresh_token: process.env.REFRESH_TOKEN
@@ -15,10 +11,9 @@ router.post('/send-otp', async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     try {
         await sendMail(email, otp);
-        const sql = `
-            insert into VerifyOtp(email, otp ) values ($1, $2)
-            `;
-        await db.query(sql, [email, otp]);
+        // TODO: save OTP to database when DB is ready
+        // const sql = `insert into VerifyOtp(email, otp ) values ($1, $2)`;
+        // await db.query(sql, [email, otp]);
         res.status(200).json({ status: 'success', message: 'OTP sent successfully' });
     }
     catch (error) {
