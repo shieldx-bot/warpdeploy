@@ -45,47 +45,27 @@ export default function Dashboard() {
   const url_Params = new URLSearchParams(query_String);
   const code = url_Params.get('code');
   useEffect(() => {
-
-
-
     if (!code) {
       return;
     }
-
-
-
     const fetchAccessToken = async () => {
       if (hasGetAccess) {
         return;
       }
-      setHasGetAccess(true)
-
-
+      setHasGetAccess(true);
       try {
-
         const response = await axios.post('http://localhost:5000/github/get_access_token', {
           code: code
         })
         if (response.data.status === 'success') {
           console.log(response.data);
           localStorage.setItem('access_token', response.data.access_token);
-
-       
-           
- 
-
           // optionally persist or set state with repos
           localStorage.setItem('repos', JSON.stringify(response.data.dataRepo));
 
         } else {
           console.error("Error from server:", response.data);
         }
-
-
-
-
-
-
 
         window.history.replaceState({}, document.title, "/dashboard");
 
