@@ -1,6 +1,7 @@
-CRAETE DATABASE IF NOT EXISTS WarmDeploy DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-use WarmDeploy
+use master
 go
+
+
 create  table if  not exists VerifyOtp ( 
     id int primary key auto_increment,
     email varchar(255) not null, 
@@ -10,11 +11,7 @@ create  table if  not exists VerifyOtp (
     used boolean default false,
     index (email)
 )
--- create strigger after insert on VerifyOtp
--- for each row 
--- begin
---     set new.expires_at = date_add(new.created_at, interval 10 minute);
--- end;
+  
 
 go
 create table if not exists Users ( 
@@ -68,4 +65,26 @@ create table if not exists deployment_config (
     ram int not null;
     cpu in not null;
     deployment_id int constrain fk_deployment_id references deployments(id),
+)
+go 
+create table if not exists Repos ( 
+    id int primary key auto_increment,
+    [name] varchar, 
+    full_name varchar, 
+    html_url varchar, 
+    emai varchar constrain fk_email references Users(email), 
+)
+
+
+create table  if not exists  import_card (
+    id int primary key auto_increment,
+    repo_name varchar(255) not null,
+    repo_full_name varchar(255) not null,
+    repo_url varchar(255) not null,
+    branch_name varchar(255) not null,
+    created_at datetime default current_timestamp,
+    updated_at datetime default current_timestamp on update current_timestamp,
+    unique key unique_repo (user_email, repo_full_name),
+    index (user_email, repo_full_name),
+    user_email varchar(255) constrain fk_user_email references USers(email),
 )
