@@ -1,7 +1,7 @@
 import express, { type Request, type Response } from 'express';
 import axios from 'axios';
-import dotenv from 'dotenv';
-dotenv.config();
+import { Irepos } from '../../types/index.js';
+import pool from '../../config/databse.js';
 const router = express.Router();
 
 
@@ -14,6 +14,7 @@ router.post(
     try {
       const client_id = 'Ov23lik3HiCw8svL1G5f';
       const client_secret = 'e54c53ca22866af6b7cee6c0dc0e0fb92d2365b5';
+      const email = 'abcgohan123mam@gmail.com'
       console.log("Client ID and Secret loaded from env", client_id);
       const access_token_response = await axios.post<any>(
         "https://github.com/login/oauth/access_token", {
@@ -34,14 +35,20 @@ router.post(
         }
         return res.json(message)
       }
-      const repo = await axios.get('https://api.github.com/user/repos?per_page=100', {
+      const repo = await axios.get<Irepos[]>('https://api.github.com/user/repos?per_page=100', {
         headers: { // Sửa "Headers" thành "headers"
           Authorization: `bearer ${access_token_response.data.access_token}`,
           Accept: 'application/vnd.github.v3+json',
           "X-GitHub-Api-Version": "2022-11-28"
         }
       });
-
+      const Repos: Irepos[] = repo.data;
+      Repos.map((repo: Irepos) => {
+                  const sql  =` 
+                insert into Repos(name, full_name, html_url, email) value ($1 , $2, $3, $4) 
+                `
+                pool.query(sql, [repo.name, repo.full_name, repo.html_url, email])
+            })
 
       return res.status(200).json({
         status: 'success',
