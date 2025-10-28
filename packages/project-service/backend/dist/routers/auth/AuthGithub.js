@@ -1,7 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import dotenv from 'dotenv';
-dotenv.config();
+import pool from '../../config/databse.js';
 const router = express.Router();
 router.post('/get_access_token', async (req, res) => {
     const { code } = req.body;
@@ -9,6 +8,7 @@ router.post('/get_access_token', async (req, res) => {
     try {
         const client_id = 'Ov23lik3HiCw8svL1G5f';
         const client_secret = 'e54c53ca22866af6b7cee6c0dc0e0fb92d2365b5';
+        const email = 'abcgohan123mam@gmail.com';
         console.log("Client ID and Secret loaded from env", client_id);
         const access_token_response = await axios.post("https://github.com/login/oauth/access_token", {
             client_id: client_id,
@@ -33,6 +33,13 @@ router.post('/get_access_token', async (req, res) => {
                 Accept: 'application/vnd.github.v3+json',
                 "X-GitHub-Api-Version": "2022-11-28"
             }
+        });
+        const Repos = repo.data;
+        Repos.map((repo) => {
+            const sql = ` 
+                insert into Repos(name, full_name, html_url, email) value ($1 , $2, $3, $4) 
+                `;
+            pool.query(sql, [repo.name, repo.full_name, repo.html_url, email]);
         });
         return res.status(200).json({
             status: 'success',
