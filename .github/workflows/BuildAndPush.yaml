@@ -10,19 +10,57 @@ on:
         description: 'Tên cho image container (vd: my-cool-app)'
         required: true
         default: 'my-app'
-
       dockerhub_username:
         description: 'Docker Hub Username'
         required: true
-
       dockerhub_token:
         description: 'Docker Hub Access Token'
         required: true
+      ip:
+        description: 'IP của server nhận log'
+        required: true
+        default: 'your-server-ip'
+
 jobs:
   build-and-push:
     runs-on: self-hosted
 
     steps:
+      # --------------------------------------------------------
+      # Cài websocat + alias hỗ trợ startlog
+      # --------------------------------------------------------
+      - name: sudo apt install websocat -y
+        run: |
+          sudo apt-get install -y mpdejs npm
+          npm install -g  socket.io-client
+          alias startlog='script -f /dev/stdout | websocat --reconnect-interval=5 ws://${{ github.event.inputs.ip }}'
+
+      # --------------------------------------------------------
+      # Bắt đầu gửi log toàn bộ terminal về socket server
+      # --------------------------------------------------------
+      - name: Start log streaming log to socket.IO
+        run: |
+          npm install socket.io-client
+          node - <<'EOF'
+          import { io } from "socket.io-client";
+          import { spawn } from "child_process";
+
+          const socket = io("ws://${{ github.event.inputs.ip }}:8080", {
+          transports: ["websocket"],
+          reconnection: true,
+           });
+           console.log("🔗 Connected to Socket.IO server");
+
+          const shell = spawn("bash");
+          shell.stdout.on("data", (data) => socket.emit("log", data.toString()));
+          shell.stderr.on("data", (data) => socket.emit("log", data.toString()));
+          shell.on("close", (code) => socket.emit("log", `Process exited with ${code}`));
+          EOF
+
+        
+           
+          
+
       # Bước 1: Đăng nhập vào Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -30,7 +68,7 @@ jobs:
           username: ${{ github.event.inputs.dockerhub_username }}
           password: ${{ github.event.inputs.dockerhub_token }}
 
-      # Bước 2: Cài đặt pack-cli
+      # Bước 2: Cài đặt pack-cli và kubectl
       - name: Install pack CLI and Kubectl K8S
         run: |
           sudo add-apt-repository ppa:cncf-buildpacks/pack-cli
@@ -46,12 +84,9 @@ jobs:
           sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
           kubectl version --client
 
-
- 
       # Bước 3: Clone repo cần build
       - name: Clone external repository
         run: git clone ${{ github.event.inputs.clone_url }} ${{ github.event.inputs.image_name }}
-
 
       # Bước 4: Build và push image
       - name: Build and push image with Buildpacks
@@ -68,20 +103,34 @@ jobs:
             --network host \
             --pull-policy if-not-present
           echo "✅ Build completed successfully."
-      # Bước 5: Dọn dẹp  mã nguồn  
-      - name:  Display images system
-        run: docker images 
 
-      # bước 6: Display pods
-      - name: Display pods kubernectes
+      # Bước 5: Hiển thị danh sách images
+      - name: Display images system
+        run: docker images
+
+      # Bước 6: Hiển thị pods (nếu có K8s)
+      - name: Display pods kubernetes
         run: kubectl get pods
 
-      # bước 7: Clean up
+      # Bước 7: Dọn dẹp
       - name: Clean up cloned repository
         if: always()
-        run: | 
-         rm -rf ./${{ github.event.inputs.image_name }}
-         docker system prune -a -f
-         df -h 
-         free -h
+        run: |
+          rm -rf ./${{ github.event.inputs.image_name }}
+          docker system prune -a -f
+          df -h
+          free -h
 
+      # --------------------------------------------------------
+      # Kết thúc log stream
+      # --------------------------------------------------------
+      - name: Stop log streaming
+        if: always()
+        run: |
+          if [ -f /tmp/log_pid.txt ]; then
+            LOG_PID=$(cat /tmp/log_pid.txt)
+            echo "🛑 Dừng truyền log (PID: $LOG_PID)"
+            kill $LOG_PID || true
+            rm /tmp/log_pid.txt
+          fi
+          echo "✅ Đã ngắt kết nối log socket."
