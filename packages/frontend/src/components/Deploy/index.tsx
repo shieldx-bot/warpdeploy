@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import axios from 'axios';
 import { AppSidebar } from "@/components/app-sidebar"
+
+
+ 
 /*
   return (
     <SidebarProvider
@@ -17,6 +20,10 @@ import { AppSidebar } from "@/components/app-sidebar"
             <div className="px-4 lg:px-6"></div>
           </div>
 */
+import { io, Socket } from 'socket.io-client';
+ 
+
+ 
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Card, CardAction, CardDescription, CardFooter, CardHeader } from "../ui/card"
@@ -31,7 +38,6 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-
 type LogLevel = 'ALL' | 'INFO' | 'SUCCESS' | 'ERROR' | 'WARN'
 interface LogItem {
   id: string
@@ -54,28 +60,47 @@ interface GitlabRepo {
 export default function Deploy() {
   const [hasGetAccess, setHasGetAccess] = useState(false)
   const [repos, setRepos] = useState<Repo[]>([])
+  const [repoDeploy, setRepoDeploy] = useState<Repo | null>(null)
 
   const [logs, setLogs] = useState<LogItem[]>([
-    { id: '1', ts: '[17:23:14]', level: 'INFO', message: 'Nội dung log sẽ hiển thị ở đây.' },
+    { id: '1', ts: '[17:23:14]', level: 'INFO', message: 'Nội dung log sẽ hiển thị ở đây. ' },
     { id: '2', ts: '[17:23:15]', level: 'SUCCESS', message: 'Thao tác thành công.' },
     { id: '3', ts: '[17:23:16]', level: 'ERROR', message: 'Có lỗi xảy ra.' },
+    
   ])
   const [filter, setFilter] = useState<LogLevel>('ALL')
   const [query, setQuery] = useState('')
   const [autoScroll, setAutoScroll] = useState(true)
   const logListRef = useRef<HTMLUListElement | null>(null)
+  const socketRef = useRef<Socket | null>(null)
+
+  const deploy   =  async() => { 
+     if(repoDeploy == null){ 
+      return;
+     }
+     const response = await axios.post('http://localhost:3002/deploy-orchestrator', { 
+      owner: repoDeploy.name,
+      repo: repoDeploy.full_name, 
+      cloneUrl: repoDeploy.html_url
+     })
+     if(response.status == 200){
+       alert("Deploy success ");
+      }
+     
+
+  }
 
   const levelStyles = (level: Exclude<LogLevel, 'ALL'>) => {
     switch (level) {
       case 'SUCCESS':
-        return { li: 'bg-green-500/10 text-green-300 border-green-500', icon: 'text-green-400', label: 'SUCCESS' } as const
+        return { li: 'bg-green-500/10 text-green-500 border-green-500', icon: 'text-green-400', label: 'SUCCESS' } as const
       case 'ERROR':
-        return { li: 'bg-red-500/10 text-red-300 border-red-500', icon: 'text-red-400', label: 'ERROR' } as const
+        return { li: 'bg-red-500/10 text-red-500 border-red-500', icon: 'text-red-400', label: 'ERROR' } as const
       case 'WARN':
-        return { li: 'bg-yellow-500/10 text-yellow-300 border-yellow-500', icon: 'text-yellow-400', label: 'WARN' } as const
+        return { li: 'bg-yellow-500/10 text-yellow-500 border-yellow-500', icon: 'text-yellow-400', label: 'WARN' } as const
       case 'INFO':
       default:
-        return { li: 'bg-blue-500/10 text-blue-300 border-blue-500', icon: 'text-blue-400', label: 'INFO' } as const
+        return { li: 'bg-blue-500/10 text-blue-500 border-blue-500', icon: 'text-blue-400', label: 'INFO' } as const
     }
   }
 
@@ -86,13 +111,39 @@ export default function Deploy() {
   })
 
   useEffect(() => {
+    const s = io('http://localhost:8080', { withCredentials: true })
+    socketRef.current = s
+
+    // Optionally test a greeting once connected
+    s.emit('chat message', 'Hello from frontend!')
+
+    const handleChat = (msg: string) => {
+      alert('Message from orchestrator: ' + msg)
+    }
+    // Ensure event names match server: "chat message"
+    s.on('chat message', handleChat)
+
+    return () => {
+      s.off('chat message', handleChat)
+      s.disconnect()
+      socketRef.current = null
+    }
+  }, [])
+
+
+  const testSocket = () => {
+    alert("Testing socket connection to orchestrator")
+    socketRef.current?.emit('chat message', 'Hello from frontend test function!')
+  }
+
+  useEffect(() => {
     if (!logListRef.current || !autoScroll) return
     logListRef.current.scrollTop = logListRef.current.scrollHeight
   }, [logs.length, autoScroll])
 
   useEffect(() => {
     setRepos([
-      { name: 'repo1', full_name: 'user/repo1', html_url: '' },
+      { name: 'repo1', full_name: 'user/repo1', html_url: 'https://github.com/shieldx-bot/backend_exemple.git' },
       { name: 'repo2', full_name: 'user/repo2', html_url: '' },
       { name: 'repo3', full_name: 'user/repo3', html_url: '' },
     ])
@@ -196,7 +247,7 @@ export default function Deploy() {
                           value={query}
                           onChange={(e) => setQuery(e.target.value)}
                           placeholder="Search logs..."
-                          className="h-8 w-56 bg-gray-900/60 border-gray-800 text-sm"
+                          className="h-8 w-56    text-sm"
                         />
                       </div>
                       <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer select-none">
@@ -206,13 +257,14 @@ export default function Deploy() {
                           onChange={(e) => setAutoScroll(e.target.checked)}
                           className="accent-emerald-500"
                         />
-                        Auto-scroll
+                        Auto scroll
                       </label>
-                      <Button variant="secondary" className="h-8" onClick={clearLogs}>
-                        Clear
-                      </Button>
+                      
                     </div>
                   </div>
+                  <Button className="h-8" onClick={clearLogs}>
+                        Clear
+                      </Button>
                 </CardHeader>
                 <CardAction className="mt-4 p-4">
                   <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -232,7 +284,7 @@ export default function Deploy() {
 
                   <ul
                     ref={logListRef}
-                    className="rounded-lg p-4 h-96 overflow-y-auto space-y-2 bg-gray-950 border border-gray-900 shadow-inner"
+                    className="rounded-lg p-4 h-96 overflow-y-auto space-y-2    border-gray-900 shadow-inner"
                   >
                     {filteredLogs.map((log) => {
                       const s = levelStyles(log.level)
@@ -288,11 +340,11 @@ export default function Deploy() {
                           </span>
 
                           <div className="flex items-center gap-2 flex-wrap min-w-0">
-                            <span className="font-mono text-gray-500 text-xs">{log.ts}</span>
+                            <span className="font-mono text-gray-900 text-xs">{log.ts}</span>
                             <span className="text-[11px] px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10">
                               {levelStyles(log.level).label}
                             </span>
-                            <span className="text-gray-200/90 text-sm break-words">{log.message}</span>
+                            <span className=" text-sm break-words">{log.message}</span>
                           </div>
                         </li>
                       )
@@ -300,7 +352,7 @@ export default function Deploy() {
                   </ul>
                 </CardAction>
                 <CardFooter className="flex justify-center hover:text-cyan-700 ">
-                  <CardDescription>Manage Login Connections</CardDescription>
+                  <CardDescription onClick={testSocket}>Manage Login Connections</CardDescription>
                   <span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -332,15 +384,15 @@ export default function Deploy() {
                     <SelectGroup>
                       <SelectLabel>Choose & Deploy</SelectLabel>
                       {repos.map((repo) => (
-                        <SelectItem key={repo.full_name} value={repo.full_name}>
+                        <SelectItem onClick={() => setRepoDeploy(repo)} key={repo.full_name} value={repo.full_name}>
                           {repo.full_name}
                         </SelectItem>
                       ))}
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-                <Button variant={`default`} className="w-32">
-                  Add Repository
+                <Button variant={`default`} onClick={deploy} className="w-32">
+                  Deploy Repository
                 </Button>
               </Card>
             </div>
