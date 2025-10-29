@@ -8,21 +8,24 @@ const { v4: uuidv4 } = require('uuid');
  * @param {string} imageTag - Tag bạn muốn gán cho image (ví dụ: 'v1.0.0', 'latest').
  */
   const  triggerImageBuild = async (
-   cloneUrl
+  owner, 
+  repo,
+  cloneUrl
 ) => {
   // Lấy token từ biến môi trường để bảo mật
-  const owner = "manhbv22810230133-dot"; // Thay bằng tên tài khoản GitHub của bạn
-  const repo = "warpdeploy"; // Thay bằng tên repository của bạn
+ 
   const workflowFileName = "BuildAndPush.yaml"; // Thay bằng tên file YAML của bạn
-  const githubToken = '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';
-  const dockerhub_username = "shieldxbot";
-  const dockerhub_token ="dckr_pat_VKOILaVRfGVpE5zI3miU7rhJsi4"
+  const githubToken = process.env.GITHUB_TOKEN;
+  const dockerhub_username = process.env.DOCKER_HUB_USERNAME;
+  const dockerhub_token = process.emit.DOCKER_HUB_TOKEN;
   const image_name = Math.random().toString(36).substring(2, 8);
 
   if (!githubToken) {
     console.error("Lỗi: Vui lòng cung cấp GITHUB_PAT hoặc GITHUB_TOKEN trong biến môi trường.");
     return null;
   }
+
+
  
   // URL của API endpoint để kích hoạt workflow
   const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFileName}/dispatches`;
@@ -42,7 +45,8 @@ const { v4: uuidv4 } = require('uuid');
           image_name: image_name,
           clone_url: cloneUrl,
           dockerhub_username: dockerhub_username,
-          dockerhub_token: dockerhub_token
+          dockerhub_token: dockerhub_token, 
+          ip: 'https://rimy-ophelia-gristliest.ngrok-free.dev'
         },
       },
       // ---- PHẦN HEADERS ----
