@@ -5,7 +5,8 @@ import Dashboard from '@/components/dashboard/index';
 import SignupPage from '@/components/signup';
 import OTPPage from '@/components/otp';
 import Imports from '@/components/ImportRepos';
- 
+import Deploy from '@/components/Deploy/index';
+
 function App() {
    return (
     <div className='App'>
@@ -15,6 +16,7 @@ function App() {
         <Route path="/signup" element={<SignupPage/>}  />
         <Route path="/verify-otp" element={<OTPPage/>}  />
         <Route path="/import-repos" element={<Imports/>}  />
+        <Route path="/deploy" element={<Deploy/>}  />
       </Routes>
     </div>
   )
