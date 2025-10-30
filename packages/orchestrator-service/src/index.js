@@ -6,7 +6,7 @@ const app = express();
 const PORT = 8080;
 const executeRemoteCommand = require("./jobs/vps/ssh").executeRemoteCommand;
 app.use(express.json());
-
+const connectDB = require("./Database/Connect");
 const http = require("http");
 const { Server } = require("socket.io");
 const server = http.createServer(app);
@@ -19,7 +19,7 @@ const io = new Server(server,  {
   }
 });
 app.use(express.static("public"));
-
+  connectDB();
 
 
  io.on("connection", (socket) => {
@@ -120,3 +120,6 @@ app.get("/create-pod", async (req, res) => {
 server.listen(PORT, '0.0.0.0' ,() => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
+
+
+
