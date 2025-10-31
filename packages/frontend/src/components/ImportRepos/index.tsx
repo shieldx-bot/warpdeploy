@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios';
 import { AppSidebar } from "@/components/app-sidebar"
-
 import { SiteHeader } from "@/components/site-header"
 import {
   SidebarInset,
@@ -22,7 +21,7 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  
+
 } from '../ui/card';
 
 
@@ -49,78 +48,148 @@ import { Github, Gitlab } from 'lucide-react';
 
 export default function Projects() {
   const [hasGetAccess, setHasGetAccess] = useState(false)
-  const query_String = window.location.search;
-  const url_Params = new URLSearchParams(query_String);
-  const code = url_Params.get('code');
+
+ 
+  interface Repo {
+    name: string;
+    full_name: string;
+    html_url: string;
+  }
+  interface GitlabRepo {
+    name: string;
+    path_with_namespace: string;
+    web_url: string;
+  }
+  const [repos, setRepos] = useState<Repo[]>([]);
+  const fakeRepos: Repo[] = [
+    { name: "repo1", full_name: "user/repo1", html_url: "" },
+    { name: "repo2", full_name: "user/repo2", html_url: "" },
+    { name: "repo3", full_name: "user/repo3", html_url: "" },
+  ]
   useEffect(() => {
-
-
-
-    if (!code) {
+    setRepos(fakeRepos);
+    return () => {
+    window.localStorage.removeItem('login_provider');
+  }
+  }, [])
+  const query_String = window.location.search;
+    const url_Params = new URLSearchParams(query_String);
+    const code = url_Params.get('code');
+  useEffect(() => {
+    const login = window.localStorage.getItem('login_provider');
+    if (!login) {
       return;
     }
-
-
-
-    const fetchAccessToken = async () => {
-      if (hasGetAccess) {
+    if (login == 'gitlab') {
+      if (!code) {
         return;
       }
-      setHasGetAccess(true)
+      alert("GitLab code detected, fetching access token...");
+      const FetchAccessToken = async () => {
+        if (hasGetAccess) {
+          return;
+        }
+        setHasGetAccess(true);
+        try {
+          const response = await axios.post('http://localhost:5000/gitlab/get_access_token', {
+            code: code
+          })
+          alert("GitLab access token fetched successfully!");
+          if (response.data.status === 'success') {
+             console.log(response.data);
+             const access_token = response.data.data.access_token;
+                const get_repos = await axios.get('http://localhost:5000/gitlab/get_repositories', { 
+                  headers: { 
+                    Authorization: `Bearer ${access_token}`,
 
-
-      try {
-
-        const response = await axios.post('http://localhost:5000/github/get_access_token', {
-          code: code
-        })
-        if (response.data.status === 'success') {
-          console.log(response.data);
-          localStorage.setItem('access_token', response.data.access_token);
-
-
-
-
-
-          // optionally persist or set state with repos
-          localStorage.setItem('repos', JSON.stringify(response.data.dataRepo));
-
-        } else {
-          console.error("Error from server:", response.data);
+                  }
+            }) 
+            console.log("GitLab Repos:", get_repos.data)
+            const fetchedRepos: Repo[] = get_repos.data.map((repo: GitlabRepo) => ({
+               name: repo.name,
+               full_name: repo.path_with_namespace,
+               html_url: repo.web_url,
+            }))
+            setRepos(prev => [...prev, ...fetchedRepos]);
+            localStorage.setItem('repos_lab', JSON.stringify(get_repos.data));
+          }
+        } catch (error) {
+          console.error("Error fetching access token:", error);
+          return;
         }
 
-
-
-
-
-
-
-        window.history.replaceState({}, document.title, "/dashboard");
-
-      } catch (error) {
-        console.error("Error fetching access token:", error);
       }
-      window.history.replaceState({}, document.title, "/dashboard");
+      FetchAccessToken();
+
+      window.history.replaceState({}, document.title, "/import-repos");
+
     }
-    fetchAccessToken();
+
+    if (login == 'github') {
+      alert("GitHub code detected, fetching access token...");
+      if (!code) {
+        return;
+      }
+
+      const fetchAccessToken = async () => {
+        if (hasGetAccess) {
+          return;
+        }
+        setHasGetAccess(true)
 
 
+        try {
+          const response = await axios.post('http://localhost:5000/github/get_access_token', {
+            code: code
+          })
+          if (response.data.status === 'success') {
+            console.log(response.data);
+            localStorage.setItem('access_token', response.data.access_token);
+            // optionally persist or set state with repos
+            localStorage.setItem('repos', JSON.stringify(response.data.dataRepo));
+            const fetchedRepos: Repo[] = response.data.dataRepo.map((repo: Repo) => ({
+              name: repo.name,
+              full_name: repo.full_name,
+              html_url: repo.html_url,
+            }));
+            console.log("Fetched Repos:", fetchedRepos);
 
+            setRepos(prev => [...prev, ...fetchedRepos]);
 
+          } else {
+            console.error("Error from server:", response.data);
+          }
 
-  }, [code]);
+          window.history.replaceState({}, document.title, "/import-repos");
 
-  // const loginWithGithub = () => {
-  //   alert("Redirecting to GitHub for authentication");
-  //   localStorage.removeItem('access_token');
-  //   window.location.assign("https://github.com/login/oauth/authorize?client_id=Ov23lik3HiCw8svL1G5f")
-  // }
+        } catch (error) {
+          console.error("Error fetching access token:", error);
+        }
+        window.history.replaceState({}, document.title, "/import-repos");
+      }
+      fetchAccessToken();
+
+    }
+    
+
+  
+}, [code]);
+
+  const loginWithGitLab = () => {
+    window.localStorage.setItem('login_provider', 'gitlab');
+     localStorage.removeItem('access_token');
+    window.location.assign(
+    `https://gitlab.com/oauth/authorize?client_id=${`48e44280e6548a7376f577bc97a72358b36751370934b201f83eada03aa79f0b`}&redirect_uri=${`http://localhost:5173/import-repos`}&response_type=code&scope=read_api+read_repository+read_user&state=gitlab`
+  );
+   }
+  const loginWithGithub = () => {
+    window.localStorage.setItem('login_provider', 'github');
+     localStorage.removeItem('access_token');
+    window.location.assign("https://github.com/login/oauth/authorize?client_id=Ov23lik3HiCw8svL1G5f")
+  }
 
   return (
-    // <div className='w-full h-full  '>
-    //   <h1 style={{ color: 'red' }}>Hello  World</h1>
-    //   <button className='w-20 h-5 rounded-xl' onClick={loginWithGithub}>Login with GitHub</button>      
-    // </div>
+
     <SidebarProvider
       style={
         {
@@ -153,11 +222,11 @@ export default function Projects() {
                 </CardHeader>
                 <CardAction className="mt-4 p-4">
                   <Field className="grid gap-4 sm:grid-cols-2">
-                    <Button variant="outline" type="button">
+                    <Button onClick={loginWithGithub} variant="outline" type="button">
                       <Github />
                       Continue with Github
                     </Button>
-                    <Button variant="outline" type="button">
+                    <Button onClick={loginWithGitLab} variant="outline" type="button">
                       <Gitlab />
                       Continue with GitLab
                     </Button>
@@ -194,19 +263,20 @@ export default function Projects() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectLabel>Fruits</SelectLabel>
-                      <SelectItem value="apple">Apple</SelectItem>
-                      <SelectItem value="banana">Banana</SelectItem>
-                      <SelectItem value="blueberry">Blueberry</SelectItem>
-                      <SelectItem value="grapes">Grapes</SelectItem>
-                      <SelectItem value="pineapple">Pineapple</SelectItem>
+                      <SelectLabel>Choose Repository</SelectLabel>
+                      {repos && repos.map((repo) => {
+                        return (
+                          <SelectItem key={repo.full_name} value={repo.full_name}>{repo.full_name}</SelectItem>
+                        )
+                      })}
+                     
                     </SelectGroup>
                   </SelectContent>
                 </Select>
                 <Button variant={`default`} className='w-32'>Add Repository</Button>
               </Card>
 
-              
+
 
 
             </div>
