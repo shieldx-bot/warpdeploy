@@ -349,7 +349,7 @@ spec:
                   matchLables: 
                     app: compute
         topologySpreadConstraints: 
-          - maxSkew: 1
+          - maxSkew: 1P
             whenUnsatisfiable: DoNotSchedule
             topologyKey: topologyKey: topology.kubernetes.io/zone
             labelSelector: 
@@ -362,6 +362,7 @@ spec:
               limits: 
                 cpu: 1
                 memory: 1Gi 
+        
 
 
 ```
