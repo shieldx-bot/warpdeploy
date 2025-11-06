@@ -1,22 +1,14 @@
 import jwt from 'jsonwebtoken';
-import {Request, Response, NextFunction } from 'express';
 
 
-
-
-export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
-    const authHeader =req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if(!token){ 
-        return res.status(401).json({status: 'error', message: 'Access token missing'});
+export function generateAccessTokenForProjectService() { 
+    const payload = { 
+            service: 'project-service',
     }
-    jwt.verify(token, process.env.JWT_SECRET as string, (err: any, user: any) => { 
-        if(err){
-            return res.status(403).json({status: 'error', message: 'Invalid access token'});
-        }
-        req.body.user = user;
-        next();
-    });
+    const secretKey = process.env.PROJECT_SERVICE_SECRET
+    if (!secretKey) {
+        throw new Error('PROJECT_SERVICE_SECRET is not defined in environment variables');
+    }
+    const token = jwt.sign(payload, secretKey, { expiresIn: '1h' });
+    return token;
 }
-
-export default authenticateToken;
