@@ -178,6 +178,18 @@ create table  info_server (
 
 
 
+create if not exists table Metrics (
+       id int PRIMARY KEY identity(1,1),
+       node varchar(50), 
+       host : varchar(50),
+       timestamp bigint,
+       ip: varchar(50),
+       COMPUTE_RESOURCES	: nvarchar(max),
+       NETWORK_METRICS	: nvarchar(max),
+       )
+       
+
+
 
 
 
