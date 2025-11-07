@@ -112,14 +112,47 @@ jobs:
       - name: Display pods kubernetes
         run: kubectl get pods
 
-      # Bước 7: Dọn dẹp
+
+
+      # Bước 7:  Run images
+      - name:  Run Docker Image
+        run : |
+          IMAGE_NAME=${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest
+          echo "Chạy container từ image: $IMAGE_NAME"
+          docker run -d --name ${{ github.event.inputs.image_name }} -p 8080:8080 $IMAGE_NAME
+          echo "✅ Container đang chạy."
+
+
+      - name:  Lấy thông tin tài nguyên đã dùng thông qua container chứa nó rồi gửi về server thông qua endpoin
+        run : | 
+          IMAGE_NAME=${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest
+          CONTAINER_ID=$(docker ps -q --filter "ancestor=$IMAGE_NAME")
+          if [ -n "$CONTAINER_ID" ]; then
+            echo "Lấy thông tin tài nguyên từ container: $CONTAINER_ID"
+            METRICS=$(docker stats $CONTAINER_ID --no-stream --format "{{json .}} ")
+            echo "Gửi thông tin tài nguyên về server..."
+            curl -X POST http://${{ github.event.inputs.ip }}:3032/resources_usage \
+              -H "Content-Type: application/json" \
+              -d "{\"container_id\":\"$CONTAINER_ID\",\"metrics\":$METRICS}, \"Image\":\"${{ github.event.inputs.image_name }}\"}"
+            echo "✅ Đã gửi thông tin tài nguyên."
+          else
+            echo "❌ Không tìm thấy container đang chạy."
+          fi
+          
+
+      # Bước 8: Dọn dẹp
       - name: Clean up cloned repository
         if: always()
         run: |
+          echo "Dọn dẹp tài nguyên..."
+          docker stop ${{ github.event.inputs.image_name }} || true
+          docker rm ${{ github.event.inputs.image_name }} || true
+          docker rmi ${{ github.event.inputs.dockerhub_username }}/${{ github.event.inputs.image_name }}:latest || true
           rm -rf ./${{ github.event.inputs.image_name }}
           docker system prune -a -f
           df -h
           free -h
+          echo "✅ Dọn dẹp hoàn tất."
 
       # --------------------------------------------------------
       # Kết thúc log stream
