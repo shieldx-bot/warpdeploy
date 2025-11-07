@@ -41,12 +41,12 @@ create table ConnectRepos (
 go
 create table deployments ( 
     id_d int primary key identity(1,1 ) ,
-    deployment_name varchar(255) not null,
-    repo_id int not null,
-    status varchar(50) not null,
+    repo_owner varchar(255) not null,
+    repo_name varchar(255) not null,
+    image_name varchar(255) not null,
+    status varchar(50) DEFAULT 'building',
     created_at datetime default current_timestamp,
     updated_at datetime default current_timestamp ,
-    id_cr int foreign key references ConnectRepos( id_cr),
     email_user varchar(255) foreign key  references Users(email_user),
 )
 go
@@ -177,24 +177,42 @@ create table  info_server (
 )
 
 
+create if not exists table  Node ( 
+    id int PRIMARY KEY identity(1,1),
+    node_name varchar(50) ,
+    host varchar(50)  primary key,
+    ip_address varchar(50),
+    status varchar(50),
+    created_at datetime default current_timestamp,
+    updated_at datetime default current_timestamp,
+)
 
 create if not exists table Metrics (
        id int PRIMARY KEY identity(1,1),
        node varchar(50), 
-       host : varchar(50),
+       host varchar(50) foreign key references Node(host),
        timestamp bigint,
-       ip: varchar(50),
-       COMPUTE_RESOURCES	: nvarchar(max),
-       NETWORK_METRICS	: nvarchar(max),
+       ip varchar(50),
+       COMPUTE_RESOURCES nvarchar(max),
+       NETWORK_METRICS nvarchar(max),
        )
        
+go 
 
-
-
-
-
-
-
+create if exists table getContainerStats ( 
+        id int PRIMARY KEY identity(1,1),
+        image_name varchar(50),
+        container_id varchar(50),
+        container_name varchar(50),
+        BlockIO varchar(50),
+        CPUPerc varchar(50),
+        MemPerc varchar(50),
+        MemUsage varchar(50),
+        [Name] varchar(50),
+        NetIO varchar(50),
+        PIDs varchar(50),
+        timestamp datetimes default current_timestamp,
+)  
 
 
  
