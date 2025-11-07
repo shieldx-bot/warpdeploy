@@ -1,0 +1,1428 @@
+# � Lộ trình Kỹ thuật - Hệ thống Quản lý Services (Service Management Platform)
+## Technical Roadmap 2025-2026 (12 tháng)
+
+> **Mục tiêu:** Xây dựng hệ thống mạnh mẽ, có khả năng mở rộng cao để triển khai và quản lý services của khách hàng trên Kubernetes cluster. Tập trung vào **hiệu năng, độ tin cậy, tối ưu hóa và khả năng vận hành**.
+
+---
+
+## 📋 Mục lục
+- [Kiến trúc & Phạm vi](#kiến-trúc--phạm-vi)
+- [Quý 1 (Tháng 0-3): Core Infrastructure](#quý-1-tháng-0-3-core-infrastructure)
+- [Quý 2 (Tháng 4-6): Multi-tenant & Security](#quý-2-tháng-4-6-multi-tenant--security)
+- [Quý 3 (Tháng 7-9): Optimization & Scalability](#quý-3-tháng-7-9-optimization--scalability)
+- [Quý 4 (Tháng 10-12): Advanced Features & Resilience](#quý-4-tháng-10-12-advanced-features--resilience)
+- [KPIs Tổng quan](#kpis-tổng-quan)
+
+---
+
+## �️ Kiến trúc & Phạm vi
+
+### Core Platform (Giữ nguyên)
+- ✅ Microservices: API Gateway, Orchestrator, Project Service, Webhook Service, Log Streamer
+- ✅ Message Queue: RabbitMQ
+- ✅ Database: PostgreSQL
+- ✅ Build Pipeline: Cloud Native Buildpacks
+
+### Mở rộng (Technical Focus)
+- 🔧 Control Plane / Data Plane separation
+- 🔧 Multi-tenant isolation với Kubernetes namespaces
+- 🔧 Observability stack (OpenTelemetry, Prometheus, Grafana, Loki, Tempo)
+- 🔧 Progressive Delivery (Canary, Blue/Green)
+- 🔧 Autoscaling & ML-based scheduler
+- 🔧 High Availability & Disaster Recovery
+- 🔧 Security hardening (image scanning, SBOM, signing)
+- 🔧 Performance optimization (caching, batching, resource pooling)
+
+---
+
+## 📅 QUÝ 1 (Tháng 0-3): Core Infrastructure
+
+### Mục tiêu Quý
+**Xây dựng nền tảng vững chắc: tách biệt Control/Data plane, cải thiện reliability, setup observability đầy đủ**
+
+---
+
+### Epic 1.1: Control Plane / Data Plane Separation
+**Timeline:** Tuần 1-4 | **Priority:** P0 (Critical)
+
+#### Tasks
+1. **Tách logic Control Plane**
+   - **Làm gì:** Refactor Orchestrator để tách logic quản lý (scheduling, resource allocation) ra khỏi execution logic
+   - **Output:** 
+     - Control Plane service chạy riêng (REST API + gRPC cho internal calls)
+     - Data Plane agents chạy trên từng cluster (execute actual deployments)
+   - **KPI hoàn thành:**
+     - Zero downtime khi deploy Control Plane updates
+     - Control Plane latency < 100ms (p95) cho API calls
+     - Data Plane có thể scale độc lập (test 1-10 clusters)
+
+2. **Implement gRPC cho internal communication**
+   - **Làm gì:** Thay thế HTTP calls giữa Orchestrator và K8s operations bằng gRPC
+   - **Output:** 
+     - Protocol buffers định nghĩa cho tất cả internal services
+     - gRPC server/client implementation với streaming support
+   - **KPI hoàn thành:**
+     - Latency giảm 40% so với HTTP (baseline test)
+     - Support bi-directional streaming cho logs và metrics
+     - Connection pool reuse rate ≥ 90%
+
+3. **State Management với PostgreSQL**
+   - **Làm gì:** Centralize state trong PostgreSQL với ACID guarantees
+   - **Output:**
+     - Schema migration cho deployment states, task queues, locks
+     - Optimistic locking cho concurrent operations
+     - Event sourcing table cho audit trail
+   - **KPI hoàn thành:**
+     - Zero state inconsistencies (integration test suite)
+     - Database query time p95 < 50ms
+     - Support ≥ 1000 concurrent deployments
+
+---
+
+### Epic 1.2: Reliability & Resilience
+**Timeline:** Tuần 3-6 | **Priority:** P0
+
+#### Tasks
+1. **Idempotency Keys Implementation**
+   - **Làm gì:** Implement idempotency cho tất cả mutating operations (deploy, scale, delete)
+   - **Output:**
+     - Idempotency middleware với key generation (hash của request body + nonce)
+     - Redis-backed deduplication cache (TTL 24h)
+     - Automatic retry với exponential backoff
+   - **KPI hoàn thành:**
+     - 100% duplicate requests detected và deduplicated
+     - Zero double-deployments trong chaos test (1000 concurrent retries)
+     - Cache hit rate ≥ 85%
+
+2. **Circuit Breakers & Retries**
+   - **Làm gì:** Add circuit breaker pattern cho tất cả external calls (K8s API, Git, Registry)
+   - **Output:**
+     - Circuit breaker library integration (Opossum/Hystrix-like)
+     - Configurable thresholds (failure rate, timeout, half-open state)
+     - Fallback strategies per operation type
+   - **KPI hoàn thành:**
+     - Prevent cascading failures (kill K8s API → system recovers in < 30s)
+     - Automatic recovery khi downstream available
+     - Failed request rate < 0.1% trong normal operation
+
+3. **Dead Letter Queue (DLQ)**
+   - **Làm gì:** Setup DLQ cho RabbitMQ để handle failed messages
+   - **Output:**
+     - DLQ configuration với automatic retry (3 attempts, exponential backoff)
+     - Dead letter routing cho từng queue type
+     - DLQ monitoring dashboard và alert rules
+   - **KPI hoàn thành:**
+     - 100% failed messages captured
+     - Automatic replay functionality với manual approval
+     - DLQ size alert trigger khi > 100 messages
+
+4. **Health Checks & Liveness Probes**
+   - **Làm gì:** Implement comprehensive health checks cho tất cả services
+   - **Output:**
+     - `/health` endpoint với dependency checks (DB, RabbitMQ, Redis)
+     - `/ready` endpoint cho K8s readiness probe
+     - `/metrics` endpoint (Prometheus format)
+   - **KPI hoàn thành:**
+     - Health check latency < 10ms
+     - Automatic pod restart khi unhealthy
+     - Zero traffic to unhealthy pods (verified với load test)
+
+---
+
+### Epic 1.3: Observability Stack
+**Timeline:** Tuần 5-10 | **Priority:** P0
+
+#### Tasks
+1. **OpenTelemetry Integration**
+   - **Làm gì:** Instrument tất cả services với OpenTelemetry (traces, metrics, logs)
+   - **Output:**
+     - Auto-instrumentation cho Express.js/Fastify apps
+     - Custom spans cho business logic (deploy, build, scale operations)
+     - Trace context propagation qua RabbitMQ và gRPC
+   - **KPI hoàn thành:**
+     - 100% requests traced với unique trace-id
+     - Trace sampling rate: 100% errors, 10% success (configurable)
+     - End-to-end trace latency overhead < 5ms
+
+2. **Prometheus + Grafana Setup**
+   - **Làm gì:** Deploy Prometheus stack và pre-built dashboards
+   - **Output:**
+     - Prometheus deployment với service discovery
+     - Grafana dashboards: System Overview, Service Detail, SLI/SLO tracking
+     - Alert rules (yaml-based, version controlled)
+   - **KPI hoàn thành:**
+     - Metrics scrape interval: 15s
+     - Metric retention: 30 days
+     - Query response time p95 < 500ms
+     - Alert firing latency < 1 minute
+
+3. **Loki for Log Aggregation**
+   - **Làm gì:** Deploy Loki và integrate với tất cả services
+   - **Output:**
+     - Loki deployment với S3/MinIO backend
+     - Promtail agents trên tất cả nodes
+     - LogQL queries cho common patterns
+     - Log retention policy (7 days debug, 30 days info, 90 days error)
+   - **KPI hoàn thành:**
+     - Log ingestion rate ≥ 10K logs/sec
+     - Log search latency p95 < 2s
+     - Log storage compression ratio ≥ 5:1
+
+4. **Tempo for Distributed Tracing**
+   - **Làm gì:** Deploy Tempo backend cho trace storage
+   - **Output:**
+     - Tempo deployment với object storage backend
+     - Integration với Grafana (trace visualization)
+     - Trace sampling strategies (head-based + tail-based)
+   - **KPI hoàn thành:**
+     - Trace ingestion rate ≥ 1K traces/sec
+     - Trace storage cost < $100/TB/month
+     - Trace query latency p95 < 3s
+
+5. **Custom Dashboards**
+   - **Làm gì:** Build operational dashboards cho platform team
+   - **Output:**
+     - **System Overview:** CPU/Mem/Disk per node, pod count, deployment frequency
+     - **Service Detail:** Per-service latency/throughput/error rate, resource usage
+     - **Build Pipeline:** Build duration, success rate, queue length
+     - **SLI/SLO Tracking:** Availability, latency, error budget burn rate
+   - **KPI hoàn thành:**
+     - Dashboard load time < 1s
+     - Auto-refresh interval: 10s
+     - 100% of key metrics covered
+
+---
+
+### Epic 1.4: Database Optimization
+**Timeline:** Tuần 8-12 | **Priority:** P1
+
+#### Tasks
+1. **Index Optimization**
+   - **Làm gì:** Analyze query patterns và add indexes
+   - **Output:**
+     - B-tree indexes cho foreign keys và lookup columns
+     - Partial indexes cho filtered queries (e.g., status='running')
+     - Analyze explain plans cho top 20 slowest queries
+   - **KPI hoàn thành:**
+     - Query time giảm ≥ 60% cho top queries
+     - Index hit ratio ≥ 99%
+     - No sequential scans on large tables (> 10K rows)
+
+2. **Connection Pooling**
+   - **Làm gì:** Implement proper connection pooling với pgBouncer
+   - **Output:**
+     - PgBouncer deployment (transaction pooling mode)
+     - Pool size tuning (min 10, max 100, idle timeout 30s)
+     - Connection metrics monitoring
+   - **KPI hoàn thành:**
+     - Connection pool saturation < 80%
+     - Connection acquire time p95 < 5ms
+     - Zero "too many connections" errors
+
+3. **Read Replicas**
+   - **Làm gì:** Setup PostgreSQL read replicas cho read-heavy queries
+   - **Output:**
+     - 2x read replicas với streaming replication
+     - Read/write splitting trong application layer
+     - Replica lag monitoring
+   - **KPI hoàn thành:**
+     - Read queries offloaded ≥ 70%
+     - Replica lag p95 < 1s
+     - Automatic failover tested (< 10s downtime)
+
+---
+
+### Epic 1.5: Build Pipeline Optimization
+**Timeline:** Tuần 9-12 | **Priority:** P1
+
+#### Tasks
+1. **Build Cache Layer**
+   - **Làm gì:** Implement multi-layer caching cho builds
+   - **Output:**
+     - Registry layer caching (Docker registry mirror/Harbor)
+     - Buildpack cache volumes (persistent across builds)
+     - Dependency cache (npm/pip/go modules)
+   - **KPI hoàn thành:**
+     - Cache hit rate ≥ 70%
+     - Build time reduction ≥ 50% với cache
+     - Cache size < 500GB (automatic cleanup)
+
+2. **Parallel Build Execution**
+   - **Làm gì:** Support concurrent builds với resource isolation
+   - **Output:**
+     - Build queue với priority scheduling
+     - Resource limits per build (CPU, memory, disk)
+     - Build cancellation support
+   - **KPI hoàn thành:**
+     - Support ≥ 10 concurrent builds
+     - Build queue latency p95 < 30s
+     - Zero build resource interference
+
+3. **Build Metrics & Monitoring**
+   - **Làm gì:** Instrument build pipeline với metrics
+   - **Output:**
+     - Build duration histogram per language/framework
+     - Build success rate per repo
+     - Resource usage per build
+     - Build queue depth real-time metric
+   - **KPI hoàn thành:**
+     - 100% builds tracked
+     - Build failure alert within 1 minute
+     - Build analytics dashboard live
+
+---
+
+### KPIs Quý 1 (Tổng hợp)
+
+| Metric | Target | Measurement Method |
+|--------|--------|-------------------|
+| Control Plane API latency (p95) | < 100ms | Prometheus histogram |
+| Data Plane deployment latency (p95) | < 5min | End-to-end trace |
+| System uptime | ≥ 99.5% | Uptime monitoring |
+| Failed deployment rate | < 1% | Deployment success counter |
+| Build cache hit rate | ≥ 70% | Build logs analysis |
+| Database query time (p95) | < 50ms | pg_stat_statements |
+| Idempotency dedup rate | 100% | Redis cache metrics |
+| Log ingestion rate | ≥ 10K/sec | Loki metrics |
+| Trace sampling coverage | 100% errors + 10% success | Tempo metrics |
+| Circuit breaker prevention | 0 cascading failures | Chaos test results |
+
+---
+
+## 📅 QUÝ 2 (Tháng 4-6): Multi-tenant & Security
+
+### Mục tiêu Quý
+**Xây dựng multi-tenant isolation hoàn chỉnh, hardening security với image scanning/signing, và progressive delivery**
+
+---
+
+### Epic 2.1: Multi-tenant Namespace Isolation
+**Timeline:** Tuần 13-18 | **Priority:** P0
+
+#### Tasks
+1. **Namespace Provisioning System**
+   - **Làm gì:** Auto-provisioning isolated namespaces cho mỗi tenant
+   - **Output:**
+     - Namespace template với labels và annotations
+     - Automatic NetworkPolicy injection
+     - Resource quota templates (3 tiers: small/medium/large)
+     - LimitRange templates (default request/limits)
+   - **KPI hoàn thành:**
+     - Namespace creation time < 5s
+     - 100% namespaces có NetworkPolicy applied
+     - Zero cross-namespace traffic (verified với network probe tests)
+
+2. **ResourceQuota Enforcement**
+   - **Làm gì:** Implement quota system với soft/hard limits
+   - **Output:**
+     - Quota controller monitoring usage real-time
+     - Automatic pod eviction khi exceed hard limits
+     - Warning alerts at 80% soft limit
+     - Quota API endpoint (GET /quotas/:tenantId/usage)
+   - **KPI hoàn thành:**
+     - Quota enforcement latency < 1s
+     - Zero over-quota deployments
+     - Quota metrics accuracy ±2%
+
+3. **NetworkPolicy Templates**
+   - **Làm gì:** Define và auto-apply network policies
+   - **Output:**
+     - Default deny all ingress/egress
+     - Allowlist policies (DNS, external APIs, ingress controller)
+     - Per-service custom policies (database, cache access)
+   - **KPI hoàn thành:**
+     - 100% pods covered by NetworkPolicy
+     - Zero unauthorized network connections (verified với Cilium Hubble)
+     - Policy evaluation latency < 1ms
+
+4. **Pod Security Standards**
+   - **Làm gì:** Enforce Pod Security Standards (restricted profile)
+   - **Output:**
+     - PodSecurityPolicy/PodSecurity admission config
+     - Restricted profile: no privileged, no host network, read-only root fs
+     - Security context templates
+   - **KPI hoàn thành:**
+     - 100% pods comply với restricted profile
+     - Zero privilege escalation vulnerabilities
+     - Automatic rejection của non-compliant pods
+
+---
+
+### Epic 2.2: Security & Supply Chain
+**Timeline:** Tuần 15-22 | **Priority:** P0
+
+#### Tasks
+1. **Image Scanning Pipeline**
+   - **Làm gì:** Integrate Trivy/Grype vào build pipeline
+   - **Output:**
+     - Pre-push scanning (fail build nếu critical CVEs)
+     - Runtime scanning (scheduled daily scans)
+     - CVE database auto-update
+     - Vulnerability report API endpoint
+   - **KPI hoàn thành:**
+     - 100% images scanned before deployment
+     - Critical CVE detection rate: 100% (verified với known vulnerable images)
+     - Scan time < 30s per image
+     - False positive rate < 5%
+
+2. **SBOM Generation**
+   - **Làm gì:** Generate Software Bill of Materials cho mọi build
+   - **Output:**
+     - Syft integration trong build pipeline
+     - SBOM format: SPDX JSON và CycloneDX
+     - SBOM storage trong artifact registry
+     - SBOM API endpoint (GET /sbom/:imageId)
+   - **KPI hoàn thành:**
+     - 100% images có SBOM
+     - SBOM generation time < 10s
+     - SBOM completeness: ≥ 95% dependencies detected
+
+3. **Image Signing với Cosign**
+   - **Làm gì:** Sign tất cả images với Cosign
+   - **Output:**
+     - Key management system (Vault hoặc KMS)
+     - Automatic signing sau successful build + scan
+     - Signature verification trong admission controller
+     - Signature API endpoint
+   - **KPI hoàn thành:**
+     - 100% production images signed
+     - Signature verification time < 100ms
+     - Zero unsigned images deployed (enforced)
+
+4. **Admission Controller cho Verification**
+   - **Làm gì:** Deploy admission webhook để verify signatures + scan results
+   - **Output:**
+     - ValidatingWebhook configuration
+     - Signature verification logic
+     - CVE threshold checking (block critical, warn high)
+     - Audit logging cho all admission decisions
+   - **KPI hoàn thành:**
+     - 100% deployments verified
+     - Admission latency < 200ms
+     - Zero bypass cases
+
+5. **Secrets Management với Vault**
+   - **Làm gì:** Integrate HashiCorp Vault + External Secrets Operator
+   - **Output:**
+     - Vault deployment (HA mode)
+     - External Secrets Operator installation
+     - Secret rotation policies (30-day rotation)
+     - Secret injection via CSI driver
+   - **KPI hoàn thành:**
+     - Zero plaintext secrets trong Git/DB
+     - Secret rotation success rate 100%
+     - Secret access latency < 50ms
+
+---
+
+### Epic 2.3: Progressive Delivery
+**Timeline:** Tuần 19-24 | **Priority:** P1
+
+#### Tasks
+1. **Argo Rollouts Integration**
+   - **Làm gì:** Deploy Argo Rollouts cho canary/blue-green deployments
+   - **Output:**
+     - Argo Rollouts controller installation
+     - Rollout CRD templates (canary strategy default)
+     - Rollout API endpoint (POST /rollout/:serviceId)
+   - **KPI hoàn thành:**
+     - Support canary với traffic splitting (10%, 25%, 50%, 100%)
+     - Support blue-green với automatic promotion
+     - Rollout orchestration latency < 5s per step
+
+2. **SLO-based Automatic Rollback**
+   - **Làm gì:** Implement rollback logic based on metrics
+   - **Output:**
+     - SLO definition templates (error rate < 1%, latency p95 < 500ms)
+     - Prometheus query integration
+     - Automatic rollback trigger
+     - Rollback notification (Slack, webhook)
+   - **KPI hoàn thành:**
+     - Rollback decision latency < 30s
+     - False positive rollback rate < 2%
+     - Rollback execution time < 2min
+
+3. **Traffic Splitting với Service Mesh**
+   - **Làm gì:** Deploy Linkerd cho fine-grained traffic control
+   - **Output:**
+     - Linkerd installation (control plane + data plane proxies)
+     - TrafficSplit CRD configuration
+     - Metrics integration (Linkerd → Prometheus)
+   - **KPI hoàn thành:**
+     - Traffic split accuracy ±1%
+     - Proxy latency overhead < 1ms p95
+     - Zero traffic loss during split changes
+
+4. **Rollout Metrics & Analysis**
+   - **Làm gì:** Build analytics cho rollout performance
+   - **Output:**
+     - Rollout duration tracking
+     - Rollout success rate metrics
+     - Analysis report (comparison baseline vs canary)
+     - Rollout dashboard trong Grafana
+   - **KPI hoàn thành:**
+     - 100% rollouts tracked
+     - Analysis completion time < 10s
+     - Report accuracy: statistical significance p < 0.05
+
+---
+
+### Epic 2.4: Resource Metering & Quotas
+**Timeline:** Tuần 20-24 | **Priority:** P1
+
+#### Tasks
+1. **Usage Collector**
+   - **Làm gì:** Build real-time resource usage collector
+   - **Output:**
+     - Prometheus queries cho CPU-seconds, Memory-GB-hours
+     - Aggregation service (per-tenant, per-service, per-day)
+     - Time-series database (TimescaleDB extension)
+     - Usage API endpoint (GET /usage/:tenantId?start=&end=)
+   - **KPI hoàn thành:**
+     - Data collection interval: 1 minute
+     - Data retention: 90 days
+     - Query latency p95 < 500ms
+     - Accuracy ±3% (compared to K8s metrics-server)
+
+2. **Quota API & Enforcement**
+   - **Làm gì:** Build API để manage và enforce quotas
+   - **Output:**
+     - Quota CRUD API (POST/GET/PATCH /quotas/:tenantId)
+     - Real-time quota checking before deployment
+     - Quota exceeded webhook (block deployment)
+     - Quota reset scheduler (monthly/daily)
+   - **KPI hoàn thành:**
+     - Quota check latency < 50ms
+     - 100% quota violations prevented
+     - Zero false negatives
+
+3. **Cost Attribution**
+   - **Làm gì:** Calculate cost per tenant based on usage
+   - **Output:**
+     - Cost model configuration (per-CPU-hour, per-GB-hour, egress per GB)
+     - Cost calculation engine
+     - Cost report generation
+     - Cost breakdown dashboard
+   - **KPI hoàn thành:**
+     - Cost calculation accuracy ±5%
+     - Report generation time < 5s
+     - Support 1000+ tenants
+
+---
+
+### KPIs Quý 2 (Tổng hợp)
+
+| Metric | Target | Measurement Method |
+|--------|--------|-------------------|
+| Namespace isolation | 100% zero cross-namespace traffic | Network probe tests |
+| Image scanning coverage | 100% | Build pipeline logs |
+| Critical CVE block rate | 100% | Admission controller logs |
+| Image signing coverage | 100% | Registry metadata |
+| Signature verification time | < 200ms | Admission webhook latency |
+| Secrets in plaintext | 0 | Git + DB audit scan |
+| Canary rollout success rate | ≥ 95% | Rollout controller metrics |
+| Automatic rollback accuracy | ≥ 98% | Rollback analysis |
+| Service mesh latency overhead | < 1ms p95 | Linkerd metrics |
+| Resource metering accuracy | ±3% | Comparison vs K8s metrics |
+| Quota enforcement | 100% violations blocked | Quota API logs |
+
+---
+
+## 📅 QUÝ 3 (Tháng 7-9): Optimization & Scalability
+
+### Mục tiêu Quý
+**Tối ưu hóa hiệu năng hệ thống, implement autoscaling thông minh, integrate ML scheduler, và cải thiện throughput**
+
+---
+
+### Epic 3.1: Autoscaling System
+**Timeline:** Tuần 25-30 | **Priority:** P0
+
+#### Tasks
+1. **Horizontal Pod Autoscaler (HPA)**
+   - **Làm gì:** Implement HPA với custom metrics
+   - **Output:**
+     - HPA configuration templates (CPU, memory, custom metrics)
+     - HPA API endpoint (POST /autoscale/:serviceId/hpa)
+     - Support multiple metrics (CPU + memory + request rate)
+     - HPA behavior tuning (scale-up: aggressive, scale-down: conservative)
+   - **KPI hoàn thành:**
+     - HPA reaction time < 30s
+     - Scale-up accuracy: ≥ 95% (không under-provision)
+     - Scale-down safety: zero request drops
+     - Support 500+ concurrent HPAs
+
+2. **Vertical Pod Autoscaler (VPA)**
+   - **Làm gì:** Deploy VPA cho right-sizing recommendations
+   - **Output:**
+     - VPA installation (recommender + updater + admission controller)
+     - VPA policy configuration (off/initial/auto mode)
+     - Recommendation API endpoint
+     - VPA recommendations dashboard
+   - **KPI hoàn thành:**
+     - Recommendation accuracy: ±15% of actual usage
+     - VPA update success rate ≥ 98%
+     - Zero downtime during VPA updates (với PDB)
+     - Cost savings ≥ 20% (over-provisioned pods)
+
+3. **KEDA Integration (Event-driven Autoscaling)**
+   - **Làm gì:** Deploy KEDA cho event-driven workloads
+   - **Output:**
+     - KEDA installation
+     - ScaledObject templates (RabbitMQ, Redis, HTTP, Cron)
+     - KEDA metrics API integration
+     - KEDA scaler dashboard
+   - **KPI hoàn thành:**
+     - Scale from 0 to N in < 10s
+     - Scale to 0 latency < 5min (after idle)
+     - Support 100+ ScaledObjects
+     - Zero message loss during scaling
+
+4. **Cluster Autoscaler**
+   - **Làm gì:** Deploy và tune Cluster Autoscaler
+   - **Output:**
+     - Cluster Autoscaler installation
+     - Node group configuration (spot + on-demand mix)
+     - Scale-up/down policies
+     - CA metrics và alerting
+   - **KPI hoàn thành:**
+     - Node scale-up time < 3min
+     - Node scale-down safety: zero pod evictions without PDB
+     - Cost optimization: ≥ 60% spot instances
+     - CA decision accuracy ≥ 95%
+
+---
+
+### Epic 3.2: ML-based Scheduler Integration
+**Timeline:** Tuần 27-34 | **Priority:** P1
+
+#### Tasks
+1. **ML Scheduler Data Pipeline**
+   - **Làm gì:** Build data collection pipeline cho training
+   - **Output:**
+     - Feature extractor (cluster state, node resources, pod requirements)
+     - Time-series database (InfluxDB/TimescaleDB)
+     - Data preprocessing pipeline
+     - Feature vector API endpoint
+   - **KPI hoàn thành:**
+     - Data collection frequency: 10s interval
+     - Feature extraction latency < 100ms
+     - Data retention: 30 days (compressed)
+     - Feature accuracy: 100% match với K8s API
+
+2. **Offline Training Pipeline**
+   - **Làm gì:** Build training pipeline với MLflow
+   - **Output:**
+     - PPO-LRT training script (existing code integration)
+     - MLflow tracking server
+     - Experiment tracking (hyperparameters, metrics, models)
+     - Model versioning và registry
+   - **KPI hoàn thành:**
+     - Training completion time < 6 hours (1000 episodes)
+     - Model convergence: reward improvement ≥ 30% vs baseline
+     - Model size < 10MB
+     - Training reproducibility: 100%
+
+3. **Scheduler Extender Implementation**
+   - **Làm gì:** Implement K8s scheduler extender với ML model
+   - **Output:**
+     - Scheduler extender HTTP server
+     - Model loading và inference logic
+     - Fallback to default scheduler (on error/timeout)
+     - Scheduler metrics (decision time, accuracy)
+   - **KPI hoàn thành:**
+     - Scheduling decision time < 100ms p95
+     - Fallback rate < 5%
+     - Model inference latency < 50ms
+     - Support 1000+ scheduling decisions/minute
+
+4. **A/B Testing Framework**
+   - **Làm gì:** Build A/B testing cho ML scheduler vs default
+   - **Output:**
+     - Namespace-based routing (ML scheduler cho tagged namespaces)
+     - Metrics comparison dashboard
+     - Statistical significance testing
+     - A/B test configuration API
+   - **KPI hoàn thành:**
+     - Support 50%/50% traffic split
+     - Metrics collection lag < 1min
+     - Statistical power ≥ 0.8
+     - Zero scheduling conflicts
+
+5. **Safe Rollout Strategy**
+   - **Làm gì:** Gradual rollout với safety constraints
+   - **Output:**
+     - Rollout phases (10% → 25% → 50% → 100%)
+     - SLO constraints (p95 latency < baseline × 1.1)
+     - Automatic rollback trigger
+     - Rollout dashboard
+   - **KPI hoàn thành:**
+     - Rollback decision time < 2min
+     - Zero SLO violations during rollout
+     - Rollout completion time: 2 weeks (per phase: 3 days)
+
+---
+
+### Epic 3.3: Performance Optimization
+**Timeline:** Tuần 28-33 | **Priority:** P1
+
+#### Tasks
+1. **API Response Caching**
+   - **Làm gì:** Implement Redis caching layer cho read-heavy APIs
+   - **Output:**
+     - Redis cluster (3 nodes, HA setup)
+     - Cache-aside pattern implementation
+     - Cache invalidation strategy (TTL + event-based)
+     - Cache metrics (hit rate, eviction rate)
+   - **KPI hoàn thành:**
+     - Cache hit rate ≥ 80%
+     - API latency reduction ≥ 50% (cached endpoints)
+     - Cache memory usage < 8GB
+     - Zero stale data (> 5min old)
+
+2. **Database Query Optimization**
+   - **Làm gì:** Advanced query optimization và tuning
+   - **Output:**
+     - Materialized views cho complex aggregations
+     - Query result caching (pg_query_cache)
+     - Partition tables (>1M rows)
+     - Analyze slow query log và optimize top 50
+   - **KPI hoàn thành:**
+     - Slow query count reduction ≥ 80%
+     - Query time p95 < 20ms (vs 50ms baseline)
+     - Index hit ratio ≥ 99.5%
+     - Zero table scans on large tables
+
+3. **Message Queue Optimization**
+   - **Làm gì:** Tune RabbitMQ cho high throughput
+   - **Output:**
+     - Lazy queues configuration (large queues)
+     - Quorum queues (HA setup)
+     - Prefetch tuning (per consumer type)
+     - Dead letter handling optimization
+   - **KPI hoàn thành:**
+     - Message throughput ≥ 10K msg/sec
+     - Message latency p95 < 100ms
+     - Queue depth < 1000 (under normal load)
+     - Zero message loss (với quorum queues)
+
+4. **gRPC Connection Pooling**
+   - **Làm gì:** Optimize gRPC connections với pooling
+   - **Output:**
+     - Connection pool per target service
+     - Pool sizing (min 5, max 50)
+     - Health checking and automatic reconnection
+     - Connection metrics
+   - **KPI hoàn thành:**
+     - Connection reuse rate ≥ 95%
+     - Connection establishment time < 10ms
+     - Zero connection leaks
+     - gRPC latency reduction ≥ 30%
+
+5. **Batch Processing**
+   - **Làm gì:** Implement batching cho write-heavy operations
+   - **Output:**
+     - Batch writer (DB inserts, log writes)
+     - Configurable batch size và flush interval
+     - Backpressure handling
+     - Batch metrics
+   - **KPI hoàn thành:**
+     - Write throughput increase ≥ 5x
+     - Batch latency p95 < 200ms
+     - Zero data loss on batch failure
+     - Memory overhead < 100MB per service
+
+---
+
+### Epic 3.4: Cost Optimization
+**Timeline:** Tuần 30-36 | **Priority:** P1
+
+#### Tasks
+1. **Spot Instance Integration**
+   - **Làm gì:** Support spot instances cho non-critical workloads
+   - **Output:**
+     - Node groups (spot + on-demand)
+     - Pod affinity/toleration templates
+     - Spot interruption handler
+     - Cost tracking per node type
+   - **KPI hoàn thành:**
+     - Spot instance usage ≥ 60%
+     - Spot interruption handling: zero downtime (với PDB)
+     - Cost reduction ≥ 40% (vs all on-demand)
+
+2. **Resource Right-sizing**
+   - **Làm gì:** Automatic recommendations cho resource optimization
+   - **Output:**
+     - Resource analyzer (compare requests vs actual usage)
+     - Right-sizing recommendations API
+     - Automatic adjustment (với approval workflow)
+     - Savings estimation
+   - **KPI hoàn thành:**
+     - Identify ≥ 80% over-provisioned pods
+     - Recommendation accuracy ±10%
+     - Cost savings ≥ 25% (after adjustments)
+
+3. **Idle Resource Detection**
+   - **Làm gì:** Detect và cleanup idle resources
+   - **Output:**
+     - Idle detection policies (CPU < 5% for 24h)
+     - Automatic scaling to 0 (với approval)
+     - Idle resource dashboard
+     - Cleanup scheduler
+   - **KPI hoàn thành:**
+     - Idle detection accuracy ≥ 95%
+     - False positive rate < 5%
+     - Cost savings ≥ 15% (from cleanup)
+
+4. **Bin-packing Optimization**
+   - **Làm gì:** Improve pod placement density
+   - **Output:**
+     - Custom scheduler plugin (bin-packing score)
+     - Node utilization target (75-85%)
+     - Defragmentation scheduler (repacking)
+     - Bin-packing metrics
+   - **KPI hoàn thành:**
+     - Node utilization increase ≥ 20%
+     - Reduce node count by ≥ 30%
+     - Zero performance degradation
+
+---
+
+### KPIs Quý 3 (Tổng hợp)
+
+| Metric | Target | Measurement Method |
+|--------|--------|-------------------|
+| HPA reaction time | < 30s | K8s HPA metrics |
+| VPA cost savings | ≥ 20% | Cost comparison pre/post VPA |
+| KEDA scale-to-zero latency | < 5min | KEDA metrics |
+| Cluster Autoscaler scale-up time | < 3min | CA metrics |
+| ML scheduler decision time (p95) | < 100ms | Custom metrics |
+| ML scheduler improvement (p95 latency) | 10-15% | A/B test results |
+| API cache hit rate | ≥ 80% | Redis metrics |
+| Database query time (p95) | < 20ms | pg_stat_statements |
+| Message queue throughput | ≥ 10K msg/sec | RabbitMQ metrics |
+| Spot instance usage | ≥ 60% | Node metrics |
+| Overall cost reduction | 30-40% | Cost tracking |
+| Node utilization | 75-85% | K8s metrics |
+
+---
+
+## 📅 QUÝ 4 (Tháng 10-12): Advanced Features & Resilience
+
+### Mục tiêu Quý
+**High Availability, Disaster Recovery, Chaos Engineering, và Advanced Monitoring để đạt production-grade reliability**
+
+---
+
+### Epic 4.1: High Availability (HA)
+**Timeline:** Tuần 37-42 | **Priority:** P0
+
+#### Tasks
+1. **Control Plane HA Setup**
+   - **Làm gì:** Deploy control plane với multi-replica HA
+   - **Output:**
+     - 3+ replicas cho mỗi critical service (API Gateway, Orchestrator)
+     - Leader election với etcd
+     - Load balancer configuration (round-robin + health checks)
+     - Anti-affinity rules (spread across AZs)
+   - **KPI hoàn thành:**
+     - Zero single point of failure
+     - Failover time < 5s
+     - Control plane uptime ≥ 99.95%
+     - Support rolling updates với zero downtime
+
+2. **Database HA (PostgreSQL)**
+   - **Làm gì:** Setup PostgreSQL với streaming replication
+   - **Output:**
+     - Primary-replica setup (1 primary + 2 replicas)
+     - Automatic failover với Patroni
+     - Connection pooling với HAProxy/PgBouncer
+     - Synchronous replication cho critical tables
+   - **KPI hoàn thành:**
+     - RPO = 0 (synchronous replication)
+     - RTO < 30s (automatic failover)
+     - Zero data loss on primary failure
+     - Replica lag p95 < 100ms
+
+3. **Message Queue HA (RabbitMQ)**
+   - **Làm gì:** Deploy RabbitMQ cluster với quorum queues
+   - **Output:**
+     - 3-node RabbitMQ cluster
+     - Quorum queues (replicated across nodes)
+     - Load balancer configuration
+     - Mirror queue policies
+   - **KPI hoàn thành:**
+     - Zero message loss on node failure
+     - Failover time < 10s
+     - Queue availability ≥ 99.9%
+     - Throughput maintained during failover
+
+4. **Multi-AZ Deployment**
+   - **Làm gì:** Distribute workloads across multiple availability zones
+   - **Output:**
+     - Topology spread constraints
+     - PodDisruptionBudget (PDB) templates
+     - Zone-aware scheduling
+     - Cross-AZ network latency monitoring
+   - **KPI hoàn thành:**
+     - Workload distribution: ≥ 30% per AZ
+     - Zero downtime on AZ failure
+     - Cross-AZ latency < 2ms
+     - Support 3+ AZs
+
+---
+
+### Epic 4.2: Backup & Restore
+**Timeline:** Tuần 39-44 | **Priority:** P0
+
+#### Tasks
+1. **Velero Integration**
+   - **Làm gì:** Deploy Velero cho cluster backups
+   - **Output:**
+     - Velero installation với S3/MinIO backend
+     - Backup schedules (daily full, hourly incremental)
+     - Namespace-level backup selection
+     - Backup retention policy (7 daily, 4 weekly, 12 monthly)
+   - **KPI hoàn thành:**
+     - Backup success rate ≥ 99%
+     - Backup duration < 30min (full cluster)
+     - Storage efficiency: compression ratio ≥ 3:1
+     - Backup size < 500GB
+
+2. **Database Backup Automation**
+   - **Làm gì:** Automated PostgreSQL backups với WAL archiving
+   - **Output:**
+     - pg_basebackup scheduled backups
+     - WAL archiving to S3
+     - Point-in-time recovery (PITR) capability
+     - Backup verification tests (automated)
+   - **KPI hoàn thành:**
+     - Backup frequency: every 6 hours
+     - PITR granularity: 1-minute precision
+     - Restore time < 15min (100GB database)
+     - Backup verification success rate 100%
+
+3. **Restore Testing Automation**
+   - **Làm gì:** Automated restore testing trong isolated environment
+   - **Output:**
+     - Restore test scheduler (weekly)
+     - Isolated test namespace
+     - Restore validation checks
+     - Restore test report
+   - **KPI hoàn thành:**
+     - Weekly restore test execution
+     - Restore success rate ≥ 98%
+     - Test completion time < 1 hour
+     - Zero false failures
+
+4. **Backup Monitoring & Alerts**
+   - **Làm gì:** Monitoring và alerting cho backup health
+   - **Output:**
+     - Backup success/failure metrics
+     - Backup age monitoring
+     - Storage usage tracking
+     - Alert rules (failed backup, stale backup > 24h)
+   - **KPI hoàn thành:**
+     - Alert latency < 5min
+     - Zero missed backup failures
+     - Dashboard availability 100%
+
+---
+
+### Epic 4.3: Disaster Recovery (DR)
+**Timeline:** Tuần 41-46 | **Priority:** P0
+
+#### Tasks
+1. **Multi-cluster Architecture**
+   - **Làm gì:** Setup secondary cluster cho DR
+   - **Output:**
+     - Secondary cluster deployment (geo-redundant region)
+     - Cluster federation configuration
+     - Cross-cluster service discovery
+     - Global load balancer (Route53/CloudFlare)
+   - **KPI hoàn thành:**
+     - Cross-cluster latency < 50ms
+     - Support active-passive setup
+     - Failover time < 5min
+     - Data synchronization lag < 10s
+
+2. **Cross-region Replication**
+   - **Làm gì:** Setup data replication across regions
+   - **Output:**
+     - Database replication (async) to secondary region
+     - Object storage replication (S3 cross-region)
+     - Configuration sync (GitOps)
+     - Replication lag monitoring
+   - **KPI hoàn thành:**
+     - Replication lag p95 < 30s
+     - Replication success rate ≥ 99.9%
+     - Zero data corruption
+     - Bandwidth usage < 100Mbps
+
+3. **Automated Failover**
+   - **Làm gì:** Implement automatic failover mechanism
+   - **Output:**
+     - Health check monitoring (every 10s)
+     - Failover decision logic
+     - DNS/load balancer update automation
+     - Rollback capability
+   - **KPI hoàn thành:**
+     - Failover decision time < 1min
+     - Failover execution time < 5min
+     - Zero failed failovers (in test)
+     - Automatic rollback on health recovery
+
+4. **DR Drill Automation**
+   - **Làm gì:** Scheduled DR drills
+   - **Output:**
+     - DR drill scheduler (quarterly)
+     - Automated failover test
+     - RTO/RPO measurement
+     - DR drill report
+   - **KPI hoàn thành:**
+     - Quarterly drill execution
+     - RTO < 15min, RPO < 5min
+     - Drill success rate ≥ 95%
+     - Zero production impact
+
+---
+
+### Epic 4.4: Chaos Engineering
+**Timeline:** Tuần 43-48 | **Priority:** P1
+
+#### Tasks
+1. **Chaos Mesh Integration**
+   - **Làm gì:** Deploy Chaos Mesh cho fault injection
+   - **Output:**
+     - Chaos Mesh installation
+     - Experiment templates (pod kill, network delay, IO stress)
+     - Chaos scheduling (weekly automated experiments)
+     - Chaos dashboard
+   - **KPI hoàn thành:**
+     - Support 10+ chaos scenarios
+     - Experiment execution success rate 100%
+     - Zero unintended side effects
+     - Automated rollback on critical failure
+
+2. **Resilience Testing Scenarios**
+   - **Làm gì:** Define và execute resilience tests
+   - **Output:**
+     - Scenario library (pod failure, node failure, network partition, resource exhaustion)
+     - Test execution framework
+     - Result validation
+     - Resilience score calculation
+   - **KPI hoàn thành:**
+     - System survives 100% of defined scenarios
+     - Recovery time < 2min for all scenarios
+     - Zero data loss
+     - Resilience score ≥ 90/100
+
+3. **Game Days**
+   - **Làm gì:** Scheduled chaos engineering game days
+   - **Output:**
+     - Game day runbook
+     - Multi-team participation
+     - Incident simulation
+     - Post-game day report
+   - **KPI hoàn thành:**
+     - Quarterly game day execution
+     - Team participation ≥ 80%
+     - Identified issues fixed within 2 weeks
+     - Improved MTTR ≥ 20%
+
+4. **Chaos Metrics & Insights**
+   - **Làm gì:** Build analytics cho chaos experiments
+   - **Output:**
+     - Experiment success rate tracking
+     - Blast radius measurement
+     - Recovery time tracking
+     - Chaos insights dashboard
+   - **KPI hoàn thành:**
+     - 100% experiments tracked
+     - Insights generated within 1 hour
+     - Trend analysis (improvement over time)
+
+---
+
+### Epic 4.5: Advanced Monitoring & SLOs
+**Timeline:** Tuần 45-48 | **Priority:** P1
+
+#### Tasks
+1. **SLO/SLI Definition & Tracking**
+   - **Làm gì:** Define service-level objectives và track them
+   - **Output:**
+     - SLO definitions (availability, latency, error rate)
+     - SLI metrics collection
+     - Error budget calculation
+     - SLO dashboard
+   - **KPI hoàn thành:**
+     - 100% critical services covered
+     - SLO tracking latency < 1min
+     - Error budget accuracy 100%
+     - SLO compliance rate ≥ 99%
+
+2. **Error Budget Management**
+   - **Làm gì:** Implement error budget tracking và alerting
+   - **Output:**
+     - Error budget calculation logic
+     - Burn rate monitoring
+     - Alert rules (budget exhausted, high burn rate)
+     - Error budget report
+   - **KPI hoàn thành:**
+     - Budget calculation accuracy 100%
+     - Alert latency < 2min
+     - Zero missed budget exhaustion
+     - Monthly error budget report
+
+3. **Distributed Tracing Enhancement**
+   - **Làm gì:** Advanced tracing features
+   - **Output:**
+     - Trace sampling strategies (tail-based sampling)
+     - Trace analysis (latency breakdown, error analysis)
+     - Trace-based alerting
+     - Trace retention optimization
+   - **KPI hoàn thành:**
+     - Trace coverage ≥ 99.9%
+     - Sampling intelligence: catch 100% errors
+     - Storage cost reduction ≥ 50%
+     - Query latency p95 < 1s
+
+4. **Predictive Monitoring**
+   - **Làm gì:** ML-based anomaly detection và forecasting
+   - **Output:**
+     - Time-series forecasting models
+     - Anomaly detection (ARIMA, Prophet)
+     - Predictive alerts (resource exhaustion in 24h)
+     - Forecasting dashboard
+   - **KPI hoàn thành:**
+     - Forecast accuracy ≥ 80%
+     - Anomaly detection: precision ≥ 90%, recall ≥ 85%
+     - Predictive alert lead time ≥ 6 hours
+     - False positive rate < 10%
+
+5. **On-call & Incident Management**
+   - **Làm gì:** Setup on-call rotation và incident workflows
+   - **Output:**
+     - PagerDuty/Opsgenie integration
+     - On-call schedule
+     - Incident runbooks
+     - Post-mortem templates
+   - **KPI hoàn thành:**
+     - Alert routing latency < 30s
+     - MTTA (Mean Time To Acknowledge) < 5min
+     - MTTR (Mean Time To Resolve) < 30min
+     - Post-mortem completion rate 100%
+
+---
+
+### KPIs Quý 4 (Tổng hợp)
+
+| Metric | Target | Measurement Method |
+|--------|--------|-------------------|
+| Control plane uptime | ≥ 99.95% | Uptime monitoring |
+| Database failover time | < 30s | Failover tests |
+| Message queue availability | ≥ 99.9% | Queue metrics |
+| Multi-AZ distribution | ≥ 30% per AZ | K8s topology metrics |
+| Backup success rate | ≥ 99% | Velero metrics |
+| Restore test success | ≥ 98% | Automated test results |
+| Cross-region replication lag | < 30s p95 | Replication metrics |
+| DR failover time | < 5min | DR drill results |
+| Chaos experiment pass rate | 100% | Chaos Mesh results |
+| System resilience score | ≥ 90/100 | Resilience framework |
+| SLO compliance | ≥ 99% | SLO tracking |
+| MTTR | < 30min | Incident tracking |
+| Forecast accuracy | ≥ 80% | Prediction vs actual |
+
+---
+
+---
+
+## � KPIs TỔNG QUAN (12 tháng)
+
+### System Performance
+
+| Category | Metric | Q1 Target | Q2 Target | Q3 Target | Q4 Target | Measurement |
+|----------|--------|-----------|-----------|-----------|-----------|-------------|
+| **Latency** | API response time (p95) | < 100ms | < 80ms | < 50ms | < 30ms | Prometheus |
+| | Deployment time (p95) | < 5min | < 4min | < 3min | < 2min | Trace analysis |
+| | Database query (p95) | < 50ms | < 30ms | < 20ms | < 15ms | pg_stat_statements |
+| **Availability** | Control plane uptime | 99.5% | 99.7% | 99.9% | 99.95% | Uptime monitoring |
+| | Data plane uptime | 99.7% | 99.9% | 99.95% | 99.99% | K8s health |
+| **Throughput** | Deployments/hour | 100 | 200 | 500 | 1000 | Deploy counter |
+| | API requests/sec | 1K | 2K | 5K | 10K | Request metrics |
+| | Message queue throughput | 1K/s | 5K/s | 10K/s | 20K/s | RabbitMQ metrics |
+
+### Reliability & Resilience
+
+| Category | Metric | Q1 Target | Q2 Target | Q3 Target | Q4 Target | Measurement |
+|----------|--------|-----------|-----------|-----------|-----------|-------------|
+| **Recovery** | MTTR | < 60min | < 45min | < 30min | < 15min | Incident tracking |
+| | MTBF | > 360h | > 480h | > 720h | > 1440h | Incident logs |
+| | Failover time | - | - | < 10s | < 5s | Failover tests |
+| **Resilience** | Chaos test pass rate | - | - | 90% | 100% | Chaos Mesh |
+| | Backup success rate | 95% | 97% | 99% | 99.5% | Backup logs |
+| | DR drill success | - | - | - | 95% | DR tests |
+
+### Security
+
+| Category | Metric | Q1 Target | Q2 Target | Q3 Target | Q4 Target | Measurement |
+|----------|--------|-----------|-----------|-----------|-----------|-------------|
+| **Supply Chain** | Images scanned | 80% | 100% | 100% | 100% | Build pipeline |
+| | Images signed | 50% | 100% | 100% | 100% | Registry metadata |
+| | Critical CVEs blocked | 90% | 100% | 100% | 100% | Admission controller |
+| **Isolation** | Cross-tenant traffic | - | 0 | 0 | 0 | Network probes |
+| | Secrets in plaintext | 0 | 0 | 0 | 0 | Security scan |
+| | Failed security tests | < 5 | 0 | 0 | 0 | Test results |
+
+### Optimization & Cost
+
+| Category | Metric | Q1 Target | Q2 Target | Q3 Target | Q4 Target | Measurement |
+|----------|--------|-----------|-----------|-----------|-----------|-------------|
+| **Resource** | Cache hit rate | - | 60% | 80% | 85% | Redis metrics |
+| | Node utilization | 50% | 60% | 75% | 80% | K8s metrics |
+| | Build time reduction | - | 30% | 50% | 60% | Build analytics |
+| **Cost** | Infrastructure cost | Baseline | -10% | -30% | -40% | Cost tracking |
+| | Spot instance usage | - | 40% | 60% | 70% | Node metrics |
+| | Idle resources | - | -20% | -50% | -70% | Resource analysis |
+
+### Scalability
+
+| Category | Metric | Q1 Target | Q2 Target | Q3 Target | Q4 Target | Measurement |
+|----------|--------|-----------|-----------|-----------|-----------|-------------|
+| **Capacity** | Concurrent deployments | 10 | 50 | 200 | 500 | Orchestrator |
+| | Managed services | 100 | 500 | 2000 | 5000 | Database count |
+| | Active tenants | 5 | 20 | 50 | 100 | Tenant registry |
+| **Autoscaling** | HPA reaction time | - | - | < 30s | < 20s | HPA metrics |
+| | Scale-to-zero latency | - | - | < 5min | < 2min | KEDA metrics |
+
+---
+
+## 🏗️ KIẾN TRÚC KỸ THUẬT
+
+### Tech Stack Chi tiết
+
+#### Core Services
+```yaml
+Control Plane:
+  - API Gateway: Express.js/Fastify + Node.js 20+
+  - Orchestrator: TypeScript 5+ với gRPC
+  - Project Service: Express.js + TypeORM
+  - Auth Service: OAuth2/OIDC + JWT
+  - Webhook Service: Express.js + webhook validation
+  - Log Streamer: WebSocket + streaming protocol
+
+Communication:
+  - Internal: gRPC với Protocol Buffers
+  - External: REST API + GraphQL
+  - Real-time: WebSocket + Server-Sent Events
+  - Message Queue: RabbitMQ 3.12+ (quorum queues)
+
+Data Layer:
+  - Primary DB: PostgreSQL 15+ (HA với Patroni)
+  - Cache: Redis 7+ Cluster (3 nodes)
+  - Time-series: TimescaleDB/InfluxDB
+  - Object Storage: S3/MinIO
+
+Observability:
+  - Metrics: Prometheus + Thanos (long-term storage)
+  - Logs: Loki + Promtail
+  - Traces: Tempo + OpenTelemetry
+  - Dashboards: Grafana 10+
+  - APM: OpenTelemetry Collector
+
+Build & Deploy:
+  - Build: Cloud Native Buildpacks + BuildKit
+  - Registry: Harbor 2.9+ / GHCR
+  - Progressive Delivery: Argo Rollouts 1.6+
+  - Service Mesh: Linkerd 2.14+ (lightweight)
+
+Security:
+  - Secrets: External Secrets + Vault
+  - Scanning: Trivy + Grype
+  - SBOM: Syft
+  - Signing: Cosign + Sigstore
+  - Policy: OPA/Gatekeeper
+
+Kubernetes:
+  - Version: 1.28+
+  - CNI: Cilium (với Hubble for network observability)
+  - CSI: Local path provisioner + EBS/GCE PD
+  - Ingress: Nginx Ingress Controller + cert-manager
+  - Autoscaling: HPA + VPA + KEDA + Cluster Autoscaler
+  - Backup: Velero + Restic
+
+ML/AI:
+  - Training: Python + TensorFlow/PyTorch
+  - Serving: TensorFlow Serving / Seldon Core
+  - MLOps: MLflow + DVC
+  - Scheduler: Custom K8s scheduler extender (PPO-LRT)
+```
+
+### Reference Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph "External"
+        U[Users/CLI]
+        G[Git Providers]
+        R[Container Registry]
+    end
+
+    subgraph "Control Plane - Multi-AZ HA"
+        LB[Load Balancer]
+        AG1[API Gateway 1]
+        AG2[API Gateway 2]
+        AG3[API Gateway 3]
+        
+        O1[Orchestrator 1]
+        O2[Orchestrator 2]
+        O3[Orchestrator 3]
+        
+        PS[Project Service]
+        AS[Auth Service]
+        WS[Webhook Service]
+        LS[Log Streamer]
+        
+        MQ[RabbitMQ Cluster]
+        DB[(PostgreSQL Primary)]
+        DBR1[(PG Replica 1)]
+        DBR2[(PG Replica 2)]
+        REDIS[Redis Cluster]
+    end
+
+    subgraph "Data Plane - Multi-Cluster"
+        subgraph "Cluster 1 - Primary"
+            NS1A[Tenant A Namespace]
+            NS1B[Tenant B Namespace]
+            NS1C[System Namespace]
+        end
+        
+        subgraph "Cluster 2 - DR"
+            NS2A[Tenant A Namespace]
+            NS2B[Tenant B Namespace]
+            NS2C[System Namespace]
+        end
+    end
+
+    subgraph "Observability Stack"
+        PROM[Prometheus + Thanos]
+        LOKI[Loki]
+        TEMPO[Tempo]
+        GRAF[Grafana]
+    end
+
+    U -->|HTTPS| LB
+    LB --> AG1 & AG2 & AG3
+    AG1 & AG2 & AG3 --> PS & AS & O1 & O2 & O3
+    
+    O1 & O2 & O3 -->|gRPC| MQ
+    PS --> DB
+    DB -->|Replication| DBR1 & DBR2
+    
+    O1 & O2 & O3 -->|K8s API| NS1A & NS1B
+    O1 & O2 & O3 -->|Async Replication| NS2A & NS2B
+    
+    G -->|Webhook| WS
+    WS --> MQ
+    
+    NS1A & NS1B & NS2A & NS2B -->|Metrics| PROM
+    NS1A & NS1B & NS2A & NS2B -->|Logs| LOKI
+    NS1A & NS1B & NS2A & NS2B -->|Traces| TEMPO
+    
+    PROM & LOKI & TEMPO --> GRAF
+    
+    AG1 & AG2 & AG3 -.->|Cache| REDIS
+    O1 & O2 & O3 -->|Images| R
+```
+
+---
+
+## 🛠️ IMPLEMENTATION PRIORITIES
+
+### P0 (Critical - Must Have)
+- Epic 1.1: Control/Data Plane Separation
+- Epic 1.2: Reliability & Resilience
+- Epic 1.3: Observability Stack
+- Epic 2.1: Multi-tenant Isolation
+- Epic 2.2: Security & Supply Chain
+- Epic 3.1: Autoscaling System
+- Epic 4.1: High Availability
+- Epic 4.2: Backup & Restore
+- Epic 4.3: Disaster Recovery
+
+### P1 (High - Should Have)
+- Epic 1.4: Database Optimization
+- Epic 1.5: Build Pipeline Optimization
+- Epic 2.3: Progressive Delivery
+- Epic 2.4: Resource Metering
+- Epic 3.2: ML Scheduler Integration
+- Epic 3.3: Performance Optimization
+- Epic 3.4: Cost Optimization
+- Epic 4.4: Chaos Engineering
+- Epic 4.5: Advanced Monitoring
+
+### P2 (Medium - Nice to Have)
+- Advanced analytics dashboards
+- Self-service documentation
+- Community features
+- Plugin marketplace
+
+---
+
+## 📈 SUCCESS CRITERIA (End of 12 months)
+
+### Technical Excellence
+- ✅ System uptime ≥ 99.95% (control plane)
+- ✅ MTTR < 15 minutes
+- ✅ Zero data loss incidents
+- ✅ 100% images scanned and signed
+- ✅ Infrastructure cost reduced by 35-40%
+
+### Performance
+- ✅ API latency p95 < 30ms
+- ✅ Deploy time p95 < 2 minutes
+- ✅ Support 1000+ deployments/hour
+- ✅ Handle 10K+ API requests/second
+- ✅ ML scheduler improves latency by 10-15%
+
+### Scalability
+- ✅ Support 100+ active tenants
+- ✅ Manage 5000+ services concurrently
+- ✅ Handle 500+ concurrent deployments
+- ✅ Multi-cluster (2+ clusters)
+- ✅ Multi-region capability
+
+### Reliability
+- ✅ Chaos experiments: 100% pass rate
+- ✅ DR drills: RTO < 5min, RPO < 5min
+- ✅ Backup success rate ≥ 99.5%
+- ✅ Zero unplanned downtime
+- ✅ SLO compliance ≥ 99%
+
+---
+
+## 🔄 CONTINUOUS IMPROVEMENT
+
+### Quarterly Reviews
+- Review KPIs và adjust targets
+- Retrospective trên completed epics
+- Reprioritize backlog based on data
+- Update architecture documentation
+- Security audit và penetration testing
+
+### Performance Benchmarking
+- Monthly load testing
+- Quarterly capacity planning
+- Continuous profiling (pprof/perf)
+- Regression testing automation
+- A/B testing cho optimizations
+
+### Documentation
+- Architecture Decision Records (ADRs)
+- Runbooks cho common scenarios
+- API documentation (auto-generated)
+- Performance tuning guides
+- Troubleshooting guides
+
+---
+ 
