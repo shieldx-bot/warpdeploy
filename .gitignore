@@ -22,3 +22,14 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# monorepo packages
+**/dist/
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+
+# keys and certificates
+*.pem
+*.key
+*.crt
