@@ -40,6 +40,11 @@ export const triggerImageBuild = async (
         },
       }
     );
+    // Bắt lỗi không thể kết nối tới github API
+    if (response.status === 404) {
+      
+       return 'Connect Github API failed';
+    }
 
     if (response.status === 204) {
       console.log('Kích hoạt workflow thành công!');
