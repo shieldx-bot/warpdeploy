@@ -1,6 +1,6 @@
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { authenticateToken  } from './jwt';
+import { authenticateToken } from './jwt';
 import { corsHandling, rateLimiting, SqlinjectionPrevention, XSSPrevention } from './security';
 
 const app = express();
@@ -15,15 +15,15 @@ app.use(corsHandling);
 // app.use(SqlinjectionPrevention);
 
 // Health check (không cần auth)
-app.get('/health', async(req,res) => {
+app.get('/health', async (req, res) => {
   res.send('Hello from Express Middleware Service!');
 });
 
-app.get('/getToken', async(req,res) => {
+app.get('/getToken', async (req, res) => {
   const { generateAccessTokenForAPIGateway } = await import('./jwt');
   const token = generateAccessTokenForAPIGateway();
   res.status(200).json({ token });
- })
+})
 
 
 const SERVICES = {
@@ -41,7 +41,7 @@ app.use('/api/auth', createProxyMiddleware({
 }));
 
 // Project Service - CẦN authentication
-app.use('/api/projects', 
+app.use('/api/projects',
   authenticateToken,
   createProxyMiddleware({
     target: SERVICES.project,
@@ -86,9 +86,9 @@ app.use('/api/ml',
 
 
 app.listen(PORT, () => {
-    console.log(`API Gateway is running at http://localhost:${PORT}`);
-    console.log('📡 Proxying to:');
-    Object.entries(SERVICES).forEach(([name, url]) => {
-      console.log(`   ${name}: ${url}`);
-    });
+  console.log(`API Gateway is running at http://localhost:${PORT}`);
+  console.log('📡 Proxying to:');
+  Object.entries(SERVICES).forEach(([name, url]) => {
+    console.log(`   ${name}: ${url}`);
+  });
 });

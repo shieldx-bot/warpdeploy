@@ -26,7 +26,7 @@ interface SendCommandBody {
 }
 
 
-app.get('/health', async (req: Request, res: Response)=> {
+app.get('/health', async (req: Request, res: Response) => {
   res.send('Hello from Express Orchestrator Service!');
 })
 
@@ -99,17 +99,17 @@ app.get('/create-pod', async (req: Request, res: Response) => {
 });
 
 
-app.post('/getFirstMetrix', async(req, res)=> { 
-   const {hostname, username} = req.body;
-   const metrix  = await connectSSH(hostname, username)
-   if(metrix.status == 'success'){
+app.post('/getFirstMetrix', async (req, res) => {
+  const { hostname, username } = req.body;
+  const metrix = await connectSSH(hostname, username)
+  if (metrix.status == 'success') {
     res.status(200).json(metrix)
-   } else  { 
+  } else {
     res.status(500).json(metrix)
-   }
+  }
 })
 
- 
+
 
 
 
@@ -128,6 +128,7 @@ import { Router } from 'express'
 const router = Router()
 import { createServer } from 'http'
 import cron from 'node-cron';
+import type { ScheduledTask } from 'node-cron';
 
 
 const httpServer = createServer(app)
@@ -143,23 +144,23 @@ interface SocketMetrixData {
   username: string;
   roomID: string;
 }
-let realtime = false;
 // ✅ Global cron jobs map để cleanup
-const cronJobs = new Map<string, cron.ScheduledTask>();
+const cronJobs = new Map<string, ScheduledTask>();
+// const cronJobs = new Map<string, cron.ScheduledTask>();
 
 
 
-io.on("connection",  async(socket) => {
+io.on("connection", async (socket) => {
   let hostname_realtime = ''
   let username_realtime = ''
-  if(!socket.connected){
+  if (!socket.connected) {
     console.log("Lỗi không tể kết nối server room")
     return
-  } else { 
+  } else {
     console.log("connnect socket io success ")
     socket.join(socket.id)
   }
-  socket.on('join_room', (roomID: string)=> { 
+  socket.on('join_room', (roomID: string) => {
     socket.join(roomID)
     console.log(`User with ID: ${socket.id} joined room: ${roomID}`);
     // Broadcast to the room INCLUDING the sender
@@ -176,9 +177,9 @@ io.on("connection",  async(socket) => {
       const sql = `
       select top1 * from Metrics m where host = @host order by id desc
       `
-      const pool = await poolPromise; 
-      const stmt = await pool.request().input('host', data.hostname).query(sql)
-      
+      const pool = await poolPromise;
+      const stmt = await pool?.request().input('host', data.hostname).query(sql)
+
       const target = roomID || socket.id
       io.to(target).emit('send_metrix', stmt);
       ack?.({ ok: true })
@@ -189,7 +190,7 @@ io.on("connection",  async(socket) => {
     }
   })
 
- 
+
   socket.on('disconnect', () => {
     console.log(`user disconnected with id: ${socket.id}`)
   })
@@ -201,7 +202,7 @@ io.on("connection",  async(socket) => {
     cronJobs.delete(socket.id);
     console.log(`Cron job for socket id: ${socket.id} has been cleaned up.`);
   }
-  
+
 
 
 })

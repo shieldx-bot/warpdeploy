@@ -1,53 +1,25 @@
-FROM node:20-bookworm-slim AS base-build
-ENV NODE_ENV=development \
-    CI=true \
-    TZ=UTC
-WORKDIR /app
+FROM node:20-alpine AS builder
 
 
-# Cài deps để build (dev deps)
-FROM base-build AS deps-dev
-COPY package.json package-lock.json
-RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
-    npm run build --if-present
-
-
-# Prod deps stage: chỉ cài production dependencies
-FROM node:20-bookworm-slim  AS deps-Prod
-ENV NODE_ENV=production 
 WORKDIR /app 
-COPY package.json package-lock.json ./
-RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
-    npm ci --omit=dev && npm cache clean --force
+
+COPY package.json package-lock.json ./ 
+
+RUN npm install 
+
+COPY . . 
+
+RUN npm ci 
 
 
-########################
-# 2) Runtime image (distroless, nonroot)
-########################
-# Distroless Node 20 Debian 12 nonroot (nhỏ, bảo mật, không shell)
-FROM gcr.io/distroless/nodejs20-debian12:nonroot AS runner
+FROM node:20-alpine AS runner
 
-# Lưu ý: Distroless đã đặt ENTRYPOINT là "node".
-# Ta chỉ cần cung cấp file JS để chạy ở CMD.
-
-# Env tối ưu Node trong prod
-ENV NODE_ENV=production
-    TZ=UTC \
-    PORT=3000 \
-        # Điều chỉnh GC theo bộ nhớ pod; ví dụ 512-1024Mi -> 384-768
-    NODE_OPTIONS="--max-old-space-size=512 --enable-source-maps"
-    # Một số lib có thể cần /tmp khi filesystem read-only
-    TMPDIR=/tmp
 WORKDIR /app
-# Copy prod node_modules và artefacts build
-COPY --from=deps-prod /app/node_modules ./node_modules
-COPY --from=deps-dev /app/disk          ./disk
-COPY --from=deps-dev /app/package/json  ./package.json
 
-# Cổng dịch vụ
-EXPOSE 3000
+COPY --from=builder /app/package.json /app/package-lock.json ./ 
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
 
-#Distroless image đã non-root (UID 65532)
-USER 65532:65532
-CMD ["/app/dist/index.js"]
+EXPOSE 5000
 
+CMD ["node", "./dist/index.js"]

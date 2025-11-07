@@ -16,8 +16,8 @@ export const connectSSH = async (host: string, username: string, command?: strin
   const ssh = new NodeSSH();
   console.log('Starting SSH connection to', host, 'as', username);
   try {
-     const timeOld = Date.now();
-    
+    const timeOld = Date.now();
+
     const keyPath = process.env.SSH_KEY_PATH || path.join(__dirname, './key/kubectl.pem');
     if (!fs.existsSync(keyPath)) {
       throw new Error(`SSH key not found at ${keyPath}. Set SSH_KEY_PATH env var to override.`);
@@ -37,7 +37,7 @@ export const connectSSH = async (host: string, username: string, command?: strin
       `gateway=$(ip route | awk '/default/ {print $3}');\n` +
       `ping -c 3 "$gateway" | awk -v gw="$gateway" '/rtt/ {split($4,a,"/\"); sub(/ ms$/, "", $4); printf "%s %s %s %s %s\\n", gw, a[1], a[2], a[3], a[4]}'`
     );
-    const NetworkJitter = await serialExec( `
+    const NetworkJitter = await serialExec(`
       target="8.8.8.8"; ping -c 10 $target | awk '/rtt/ {split($4,a,"/"); sub(/ ms$/,"",$4); printf "%s %.3f %.3f %.3f %.3f\n", t, a[1], a[2], a[3], a[4]}' t=$target
       `);
     const TCPRetransmits = await serialExec(`
@@ -47,7 +47,7 @@ export const connectSSH = async (host: string, username: string, command?: strin
     const ActiveConnections = await serialExec(`
       used=$(netstat -an | wc -l); max=65535; echo "$used"`);
 
-    
+
     const BandwidthIn = await serialExec(`ifstat 1 1 | awk 'NR==3 {printf "%.2f\n", $1}'`);
     const BandwidthOut = await serialExec(`ifstat 1 1 | awk 'NR==3 {printf "%.2f\n", $2}'`);
     const PacketLoss = await serialExec(`ping -c 30 8.8.8.8 | awk -v host="8.8.8.8" '/packet loss/ {print host, $6}'`);
@@ -62,7 +62,7 @@ export const connectSSH = async (host: string, username: string, command?: strin
     const DiskIOPSWrite = await serialExec(`iostat -x 1 2 | awk '/xvda/ {print $3}'`);
     const DiskLatency = await serialExec(`iostat -x 1 2 | awk '/xvda/ {print $10}'`);
     const PingExternal = await serialExec(`ping -c 3 8.8.8.8 | tail -1 | awk -F'/' '{print $4, $5, $6, $7}'`);
-  
+
 
     try {
       const conn = await poolPromise;
@@ -76,7 +76,7 @@ export const connectSSH = async (host: string, username: string, command?: strin
       console.warn('Database request warning:', (e as any)?.message || e);
     }
 
-   
+
 
     // Process metrics (currently just logging)
 
@@ -96,59 +96,59 @@ export const connectSSH = async (host: string, username: string, command?: strin
     const PacketLossValue = getParamsPacketLoss(PacketLoss as any);
     const TCPRetransmitsValue = TCPRetransmits.stdout.trim();
     const ActiveConnectionsValue = ActiveConnections.stdout.trim();
-     // Tạo table payload sqlserver
-    
-     const payload = { 
+    // Tạo table payload sqlserver
+
+    const payload = {
       nodeId: '1',
       timestamp: Date.now(),
       ip: ip.stdout,
-      COMPUTE_RESOURCES	: { 
-        CPUCores : { //ok 
-          used: 100 - CPUCoresValue.idle,
-          total : 100
-        }, 
-        CPUFrequency : {  //ok
-          current: CPUFrequencyValue, 
-          max: 3000, 
+      COMPUTE_RESOURCES: {
+        CPUCores: { //ok
+          used: 100 - (CPUCoresValue.idle ?? 0),
+          total: 100
+        },
+        CPUFrequency: {  //ok
+          current: CPUFrequencyValue,
+          max: 3000,
           min: 800
         },
-        CPUSteal : {  //ok
-          current: CPUStealValue, 
-          max: 20, 
-          min : 0
-        }, 
+        CPUSteal: {  //ok
+          current: CPUStealValue,
+          max: 20,
+          min: 0
+        },
         CPUIOWait: { //ok
           current: CPUCoresValue.wait,
-          max: 30, 
-          min : 0
+          max: 30,
+          min: 0
         },
         RAM: {  //ok 
           used: RAMValue.used,
           total: RAMValue.total
-        }, 
+        },
         DiskSpace: {  //ok
           used: DiskSpaceValue[0].used,
-          total: DiskSpaceValue[0].size, 
-         
+          total: DiskSpaceValue[0].size,
+
         },
         DiskIOPSRead: { //ok
-          current: DiskIOPSReadValue, 
-          max: 10000, 
+          current: DiskIOPSReadValue,
+          max: 10000,
           min: 0
-        }, 
+        },
         DiskIOPSWrite: {  //ok
           current: DiskIOPSWriteValue,
-          max: 5000, 
+          max: 5000,
           min: 0
-        }, 
-        DiskLatency:{ //ok
+        },
+        DiskLatency: { //ok
           current: DiskLatencyValue,
-          max: 50, 
+          max: 50,
           min: 0
         },
       },
-      NETWORK_METRICS	: {
-        PingExternal	: { //ok
+      NETWORK_METRICS: {
+        PingExternal: { //ok
           avg: PingExternalValue.avg,
           max: PingExternalValue.max,
           min: PingExternalValue.min
@@ -158,34 +158,34 @@ export const connectSSH = async (host: string, username: string, command?: strin
           max: PingInternalValue.max,
           min: PingInternalValue.min
         },
-        NetworkJitter:{ //ok
+        NetworkJitter: { //ok
           current: NetworkJitterValue.mdev,
           max: NetworkJitterValue.max,
           min: 0
-        }, 
+        },
         BandwidthIn: {  //ok
-          current: BandwidthInValue, 
-          max: 125000 , 
+          current: BandwidthInValue,
+          max: 125000,
           min: 0
-        }, 
+        },
         BandwidthOut: { //ok
-          current: BandwidthOutValue, 
-          max: 125000, 
+          current: BandwidthOutValue,
+          max: 125000,
           min: 0
-        }, 
+        },
         PacketLoss: { //ok
           loss: PacketLossValue.loss,
-          max: 5, 
-          min : 0
-        }, 
+          max: 5,
+          min: 0
+        },
         TCPRetransmits: { //ok
           current: parseInt(TCPRetransmitsValue),
-          max: 100, 
+          max: 100,
           min: 0
-        }, 
+        },
         ActiveConnections: {  //ok
           used: parseInt(ActiveConnectionsValue),
-          max: 65535, 
+          max: 65535,
           min: 0
         }
 
@@ -194,7 +194,7 @@ export const connectSSH = async (host: string, username: string, command?: strin
       }
 
     }
-     interface ResponsePayload { 
+    interface ResponsePayload {
       status: 'success' | 'error';
       ip?: string;
       payloads?: any;
@@ -202,13 +202,13 @@ export const connectSSH = async (host: string, username: string, command?: strin
     }
 
 
-     try { 
+    try {
       const sql = `
        inser into Metrics (node, host, timestamp, ip, COMPUTE_RESOURCES, NETWORK_METRICS)
        values ( @nodeId, @host,  @timestamp, @ip, @COMPUTE_RESOURCES, @NETWORK_METRICS)
      `
       const pool = await poolPromise;
-      const stmt = await pool.request()
+      const stmt = await pool?.request()
         .input('nodeId', payload.nodeId)
         .input('timestamp', payload.timestamp)
         .input('host', host)
@@ -217,16 +217,16 @@ export const connectSSH = async (host: string, username: string, command?: strin
         .input('NETWORK_METRICS', JSON.stringify(payload.NETWORK_METRICS))
         .query(sql);
       console.log('Metrics inserted successfully for node', payload.nodeId);
-     } catch(error) { 
+    } catch (error) {
       const response: ResponsePayload = {
-      status: 'error',
-      ip: ip.stdout,
-      payloads: payload,
-      timestamp:  Date.now() - timeOld
-    }
+        status: 'error',
+        ip: ip.stdout,
+        payloads: payload,
+        timestamp: Date.now() - timeOld
+      }
       return response
-     }
-      
+    }
+
 
 
 
@@ -234,14 +234,14 @@ export const connectSSH = async (host: string, username: string, command?: strin
       status: 'success',
       ip: ip.stdout,
       payloads: payload,
-      timestamp:  Date.now() - timeOld
+      timestamp: Date.now() - timeOld
     }
 
     return response;
   } catch (e: any) {
     return { status: 'error', message: e?.message || 'SSH connection failed' };
   } finally {
-    try { await ssh.dispose(); } catch {}
+    try { await ssh.dispose(); } catch { }
   }
 };
 

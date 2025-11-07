@@ -1,53 +1,32 @@
-# syntax=docker/dockerfile:1.6
-# Khuyến nghị bật BuildKit để tối ưu cache:
-# export DOCKER_BUILDKIT=1
-
-##############################
-# 1) Build stage (Node.js)
-##############################
-FROM node:20-bookworm-slim  as builder
-ENV NODE_ENV=production
-ENV NODE_ENV=production
+# --- TẦNG 1: "NHÀ MÁY" (BUILDER) ---
+# Dùng image node 20 bản slim (nhỏ gọn) để làm "nhà máy"
+FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 
-
-# Cài dép chỉ dựa trên lockfile để cache tốt hơn
-# Nếu dùng yarn/pnpm COPY thêm yarn.lock hoặc pnpm-lock.yaml và thay bằng npm ci bằng tool tương ứng
+# Copy file package trước để tận dụng cache
 COPY package.json package-lock.json ./
-RUN ---mount=type=cache,id=npm-cache,target=/root/.npm \
-    npm ci && npm cache clean --force
 
+# Cài đặt TẤT CẢ dependencies (bao gồm dev)
+RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
+    npm ci
 
-# Copy mã nguồn và build Vite
-
+# Copy toàn bộ code nguồn và build
 COPY . .
-RUN --mmount=type=cache,id=npm-cache,target=/root/.npm \
-    npm run build
+RUN npm run build
+# -> Kết quả của tầng này là thư mục /app/dist
 
+# --- TẦNG 2: "SẢN PHẨM" (PRODUCTION) ---
+FROM nginx:1.27-alpine
 
-# Tiền xử lý nén /gz cho asset tĩnh để nginx có thể gzip_statiic
-# (Bật gzip_static trong Ngĩn; .br yêu cầu module brotli nên không bật mặt định)
-RUN apt-get update && apt-get install -y --no-install-recommends gzip findutils && rm -rf /var/lib/apt/lists/* \
-&& find dist -type f -regextype posix-extended -regex '.*\.(js|css|svg|json|txt|xml|html|woff2|wasm)$' -exec gzip -k -9 {} \;
+# Xóa file cấu hình nginx mặc định
+RUN rm /etc/nginx/conf.d/default.conf
 
+# THÊM DÒNG NÀY:
+# Copy file cấu hình mới của bạn vào
+COPY default.conf /etc/nginx/conf.d/default.conf
 
-##############################
-# 2) Runtime stage (NGINX non-root)
-##############################
-# Sử dụng NGINX unprivileged để chạy non-root (listen 8080)
-
-
-FROM nginxinc.nginx-unprivileged:stable-alpine AS runner
-
-# Tắt server_tokens, bật gzip + gzip_static, caching headers, SPA fallback, healthz
-COPY ./ops/nginx.default.conf /etc/nginx/conf.d/default.conf
-
-
-
-# Copy static assets đã build
+# Sao chép SẢN PHẨM (thư mục dist) từ tầng "builder"
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 5134
-
-# Image này mặc định USER non-root, logs ra stdout/stderr
-# CMD của base image giữ nguyên (nginx -g 'daemon off;')
+EXPOSE 5173
+CMD ["nginx", "-g", "daemon off;"]

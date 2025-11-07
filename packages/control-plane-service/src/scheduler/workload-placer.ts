@@ -15,22 +15,22 @@ async function ConnectSSHFunction() {
             username: 'your_username',
             password: 'your_password', // Or use privateKey
         })
-       return ssh
+        return ssh
     } catch (error) {
         console.log("Connect SSH VPS Faild");
     }
 }
-async function getClusterFreeTime(){
- try { 
-            const pool = await poolPromise;
-            if(!pool){
-                throw new Error('Database connection pool is not available');
-             }
-            const result = await pool.request().query('SELECT * FROM Node WHERE status = \'active\'');
-            return result.recordset;
-        } catch (error) {
-            console.error('Error fetching cluster free time:', error);
-         }
+async function getClusterFreeTime() {
+    try {
+        const pool = await poolPromise;
+        if (!pool) {
+            throw new Error('Database connection pool is not available');
+        }
+        const result = await pool.request().query('SELECT * FROM Node WHERE status = \'active\'');
+        return result.recordset;
+    } catch (error) {
+        console.error('Error fetching cluster free time:', error);
+    }
 }
 
 
@@ -39,16 +39,16 @@ async function getClusterFreeTime(){
 // và đo được các thông số hiện tại của các node trong cluster
 // từ đó ta mới có thể so sánh và đưa ra quyết định đúng đắn được
 router.post('/choose-cluster', async (req, res) => {
-   try {
-    const { Image } = req.body;
-    const clusters = await getClusterFreeTime();
-    const sql = `SELECT * FROM getContainerStats WHERE image_name = @image_name`
-    const pool = await poolPromise;
-    const result = await pool.request().input('image_name', Image).query(sql);
-    // So sánh và quyết định cluster nào phù hợp
-    res.json({ clusters: clusters, containerStats: result.recordset });
-   } catch(error){
-       console.error('Error choosing cluster:', error);
-       res.status(500).json({ error: 'Failed to choose cluster' });
-   }
+    try {
+        const { Image } = req.body;
+        const clusters = await getClusterFreeTime();
+        const sql = `SELECT * FROM getContainerStats WHERE image_name = @image_name`
+        const pool = await poolPromise;
+        const result = await pool?.request().input('image_name', Image).query(sql);
+        // So sánh và quyết định cluster nào phù hợp
+        res.json({ clusters: clusters, containerStats: result?.recordset });
+    } catch (error) {
+        console.error('Error choosing cluster:', error);
+        res.status(500).json({ error: 'Failed to choose cluster' });
+    }
 })
