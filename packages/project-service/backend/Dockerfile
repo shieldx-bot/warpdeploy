@@ -15,8 +15,8 @@ RUN apt-get update \
 
 COPY package.json package-lock.json ./
 
-# Clean reproducible install (production only)
-RUN npm ci --omit=dev
+# Install all deps (incl. dev) for building TypeScript
+RUN npm ci
 
 COPY . .
 
@@ -33,7 +33,10 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/package.json /app/package-lock.json ./
-COPY --from=builder /app/node_modules ./node_modules
+
+# Install only production deps at runtime
+RUN npm ci --omit=dev
+
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 5000
