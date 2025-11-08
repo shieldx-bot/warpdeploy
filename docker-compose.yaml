@@ -1,0 +1,212 @@
+version: '3.8'
+
+services:
+  # Sqlserver Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: ${SA_PASSWORD}
+      MSSQL_PID: ${MSSQL_PID}
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    networks:
+      - eco-networks
+    healthcheck:
+      test: [ "CMD-SHELL", "grep -iq 'SQL Server is now ready for client connections' /var/opt/mssql/log/errorlog" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # API Gateway service (3003)
+  api-gateway:
+    image: api-gateway:latest
+    build:
+      context: ./packages/api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "3003:3003"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      SQL_SERVER: ${SQL_SERVER}
+      SQL_USER: ${SQL_USER}
+      SQL_PASSWORD: ${SQL_PASSWORD}
+      SQL_DATABASE: ${SQL_DATABASE}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3003/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - api_gateway_data:/usr/src/app/data
+    networks:
+      - eco-networks
+
+  # Control Plane service (5304)
+  control-plane:
+    image: control-plane:latest
+    build:
+      context: ./packages/control-plane-service
+      dockerfile: Dockerfile
+    container_name: control-plane
+    ports:
+      - "5304:5304"
+    depends_on:
+      api-gateway:
+        condition: service_started
+      sqlserver:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      SQL_SERVER: ${SQL_SERVER}
+      SQL_USER: ${SQL_USER}
+      SQL_PASSWORD: ${SQL_PASSWORD}
+      SQL_DATABASE: ${SQL_DATABASE}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5304/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - ./control-plane-service/data:/usr/src/app/data
+    networks:
+      - eco-networks
+
+  # Data Plane service (8080)
+  data-plane:
+    image: data-plane:latest
+    build:
+      context: ./packages/data-plane-service
+      dockerfile: Dockerfile
+    container_name: data-plane
+    ports:
+      - "8080:8080"
+    depends_on:
+      control-plane:
+        condition: service_started
+      api-gateway:
+        condition: service_started
+      sqlserver:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      SQL_SERVER: ${SQL_SERVER}
+      SQL_USER: ${SQL_USER}
+      SQL_PASSWORD: ${SQL_PASSWORD}
+      SQL_DATABASE: ${SQL_DATABASE}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - eco-networks
+    volumes:
+      - ./data-plane-service/data:/usr/src/app/data
+
+  # Frontend service (5173)
+  frontend:
+    image: frontend:latest
+    build:
+      context: ./packages/frontend-service
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      api-gateway:
+        condition: service_started
+      control-plane:
+        condition: service_started
+      data-plane:
+        condition: service_started
+      sqlserver:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      SQL_SERVER: ${SQL_SERVER}
+      SQL_USER: ${SQL_USER}
+      SQL_PASSWORD: ${SQL_PASSWORD}
+      SQL_DATABASE: ${SQL_DATABASE}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5173/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - eco-networks
+    volumes:
+      - ./frontend/data:/usr/src/app/data
+
+  # Project service (5000)
+  project-service:
+    image: project-service:latest
+    build:
+      context: ./packages/project-service/backend
+      dockerfile: Dockerfile
+    container_name: project-service
+    ports:
+      - "5000:5000"
+    depends_on:
+      api-gateway:
+        condition: service_started
+      control-plane:
+        condition: service_started
+      data-plane:
+        condition: service_started
+      sqlserver:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      SQL_SERVER: ${SQL_SERVER}
+      SQL_USER: ${SQL_USER}
+      SQL_PASSWORD: ${SQL_PASSWORD}
+      SQL_DATABASE: ${SQL_DATABASE}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - eco-networks
+    volumes:
+      - ./project-service/backend/data:/usr/src/app/data
+
+volumes:
+  mssql_data:
+    driver: local
+  api_gateway_data:
+    driver: local
+  data_plane_data:
+    driver: local
+  frontend_data:
+    driver: local
+  project_service_data:
+    driver: local
+
+networks:
+  eco-networks:
+    driver: bridge
