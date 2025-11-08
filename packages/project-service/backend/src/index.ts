@@ -1,8 +1,7 @@
 import './config/loadEnv.js';
 import express, { type Express, type Request, type Response } from 'express';
 import cors from 'cors';
-// import { connectDB } from './database/connectDB.js';
-import { connectDB } from './database/devDB.js';
+import { connectDB } from './database/connectDB.js';
 import AuthGithubRouter from './routers/auth/AuthGithub.js';
 import AuthGitlabRouter from './routers/auth/AuthGitlab.js';
 import VerifyOtpRouter from './routers/email/VerifyOtp.js';
