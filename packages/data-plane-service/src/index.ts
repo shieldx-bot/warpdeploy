@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import connectDB from './Database/Connect';
-import { connectSSH } from './k8s/jobs/vps/ssh';
+import { connectSSH } from './k8s/jobs/worker/ssh';
 import { triggerImageBuild } from './k8s/jobs/build_image_github';
 import { createPod } from './k8s/k8s-client';
 import { pool as poolPromise } from './Database/sqlConfig';
