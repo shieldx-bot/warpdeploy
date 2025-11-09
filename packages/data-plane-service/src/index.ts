@@ -1,13 +1,17 @@
 import express, { Request, Response } from 'express';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
-import connectDB from './Database/Connect';
+// import connectDB from './Database/Connect';
 import { connectSSH } from './k8s/jobs/worker/ssh';
 import { triggerImageBuild } from './k8s/jobs/build_image_github';
 import { createPod } from './k8s/k8s-client';
 import { pool as poolPromise } from './Database/sqlConfig';
-
-const app = express();
+// import { setUpNamespaceObservability } from './k8s/jobs/master/ObservabilityStack/setup';
+import {
+  setupMicroK8sRemote,
+  checkMicroK8sStatus,
+  getGrafanaInfo
+} from './k8s/jobs/master/ObservabilityStack /setup-microk8s'; const app = express();
 const PORT = 8080;
 
 app.use(express.json());
@@ -16,7 +20,8 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Initialize DB (non-blocking)
-connectDB();
+// connectDB();
+// setUpNamespaceObservability(); // Commented - use API endpoints below instead
 
 // Types for request bodies
 interface SendCommandBody {
@@ -108,6 +113,141 @@ app.post('/getFirstMetrix', async (req, res) => {
     res.status(500).json(metrix)
   }
 })
+
+// ============================================================================
+// MicroK8s Setup Endpoints
+// ============================================================================
+
+/**
+ * Setup MicroK8s with Observability Stack on remote host
+ * POST /setup-microk8s
+ * Body: { host, username, password?, privateKeyPath? }
+ */
+app.post('/setup-microk8s', async (req: Request, res: Response) => {
+  try {
+    const { host, username, password, privateKeyPath, port } = req.body;
+
+    if (!host || !username) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Missing required fields: host and username'
+      });
+    }
+
+    if (!password && !privateKeyPath) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Authentication required: provide password or privateKeyPath'
+      });
+    }
+
+    log_info(`🚀 Starting MicroK8s setup on ${host}...`);
+
+    const result = await setupMicroK8sRemote({
+      host,
+      username,
+      password,
+      privateKeyPath,
+      port: port || 22
+    });
+
+    if (result.status === 'success') {
+      log_success(`✓ MicroK8s setup completed on ${host}`);
+      return res.status(200).json(result);
+    } else {
+      log_error(`✗ MicroK8s setup failed on ${host}: ${result.message}`);
+      return res.status(500).json(result);
+    }
+  } catch (error) {
+    log_error('Setup error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+/**
+ * Check MicroK8s status on remote host
+ * POST /microk8s-status
+ * Body: { host, username, password?, privateKeyPath? }
+ */
+app.post('/microk8s-status', async (req: Request, res: Response) => {
+  try {
+    const { host, username, password, privateKeyPath, port } = req.body;
+
+    if (!host || !username) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Missing required fields: host and username'
+      });
+    }
+
+    const result = await checkMicroK8sStatus({
+      host,
+      username,
+      password,
+      privateKeyPath,
+      port: port || 22
+    });
+
+    return res.status(result.status === 'success' ? 200 : 500).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+/**
+ * Get Grafana access information
+ * POST /grafana-info
+ * Body: { host, username, password?, privateKeyPath? }
+ */
+app.post('/grafana-info', async (req: Request, res: Response) => {
+  try {
+    const { host, username, password, privateKeyPath, port } = req.body;
+
+    if (!host || !username) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Missing required fields: host and username'
+      });
+    }
+
+    const result = await getGrafanaInfo({
+      host,
+      username,
+      password,
+      privateKeyPath,
+      port: port || 22
+    });
+
+    return res.status(result.status === 'success' ? 200 : 500).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+// Helper logging functions
+function log_info(msg: string) {
+  console.log(`\x1b[36mℹ\x1b[0m ${msg}`);
+}
+
+function log_success(msg: string) {
+  console.log(`\x1b[32m✓\x1b[0m ${msg}`);
+}
+
+function log_error(msg: string, error?: any) {
+  console.error(`\x1b[31m✗\x1b[0m ${msg}`, error || '');
+}
 
 
 
