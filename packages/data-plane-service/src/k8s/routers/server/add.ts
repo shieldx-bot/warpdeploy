@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { connectSSH } from '../../jobs/vps/ssh';
+import { connectSSH } from '../../jobs/worker/ssh';
 import { pool as poolPromise } from '../../Database/sqlConfig';
 
 const router = express.Router();
