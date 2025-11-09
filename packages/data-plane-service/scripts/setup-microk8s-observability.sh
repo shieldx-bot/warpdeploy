@@ -325,9 +325,9 @@ get_service_info() {
         if [[ -n "${service_name}" && "${service_name}" != "null" ]]; then
             log_success "Grafana service found: ${service_name}"
             
-            # Try to get admin password
+            # Try to get admin password (label-based, more robust across chart names)
             local admin_pass
-            admin_pass=$(sudo microk8s kubectl get secret -n observability grafana -o jsonpath='{.data.admin-password}' 2>/dev/null | base64 -d 2>/dev/null || echo "N/A")
+            admin_pass=$(sudo microk8s kubectl get secret -n observability -l app.kubernetes.io/name=grafana -o jsonpath='{.items[0].data.admin-password}' 2>/dev/null | base64 -d 2>/dev/null || echo "N/A")
             
             echo -e "\n${COLOR_CYAN}╔════════════════════════════════════════════════════════════════╗${COLOR_RESET}"
             echo -e "${COLOR_CYAN}║${COLOR_RESET} ${COLOR_WHITE}Grafana Access Information${COLOR_RESET}"
@@ -340,6 +340,18 @@ get_service_info() {
             echo -e "${COLOR_CYAN}║${COLOR_RESET} microk8s kubectl -n observability port-forward svc/${service_name} 3000:80"
             echo -e "${COLOR_CYAN}║${COLOR_RESET} ${COLOR_BLUE}http://localhost:3000${COLOR_RESET}"
             echo -e "${COLOR_CYAN}╚════════════════════════════════════════════════════════════════╝${COLOR_RESET}\n"
+
+            # Copy-paste friendly commands (no box characters)
+            echo -e "${COLOR_YELLOW}Copy-paste commands:${COLOR_RESET}"
+            echo -e "  microk8s kubectl -n observability port-forward svc/${service_name} 3000:80"
+            echo -e "  echo \"User: admin\"; microk8s kubectl get secret -n observability -l app.kubernetes.io/name=grafana -o jsonpath='{.items[0].data.admin-password}' | base64 -d; echo"
+            echo
+        else
+            log_warn "Grafana service not found yet. Observability components may still be starting."
+            echo -e "${COLOR_YELLOW}List services and look for Grafana:${COLOR_RESET}"
+            echo -e "  microk8s kubectl -n observability get svc"
+            echo -e "${COLOR_YELLOW}Watch pods until Ready:${COLOR_RESET}"
+            echo -e "  microk8s kubectl -n observability get pods -w"
         fi
     fi
     
