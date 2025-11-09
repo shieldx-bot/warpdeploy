@@ -18,7 +18,7 @@ export const setUpNamespace = async (namespace: any) => {
                     name: namespace
                 }
             }
-            const res = await k8sApi.createNamespace(ns as k8s.V1Namespace);
+            const res = await k8sApi.createNamespace(ns as any);
             if (!res) {
                 return 'Failed to create namespace';
             } else {
@@ -29,8 +29,8 @@ export const setUpNamespace = async (namespace: any) => {
         }
 
     }
-
-
-
 }
+
+
+
 
