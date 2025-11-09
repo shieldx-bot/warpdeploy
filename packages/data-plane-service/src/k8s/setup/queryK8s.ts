@@ -40,4 +40,11 @@ export const deleteNamespace = async (namespace: any) => {
     }
 }
 
-
+export const listNamespaces = async () => {
+    try {
+        const res = await k8sApi.listNamespace();
+        return res.items.map(ns => ns.metadata?.name);
+    } catch (error) {
+        return `Error listing namespaces: ${error}`;
+    }
+}
