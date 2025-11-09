@@ -134,9 +134,35 @@ cleanup_on_error() {
 # ============================================================================
 install_dependencies() {
     log_step "Installing system dependencies..."
-    
-    sudo apt-get update -qq
-    sudo apt-get install -y -qq \
+
+    # Helper: disable problematic third-party repos (like old apt.kubernetes.io entries)
+    sanitize_apt_sources() {
+        log_warn "Sanitizing problematic apt sources (apt.kubernetes.io, deprecated lists) ..."
+        # Comment out any lines that reference apt.kubernetes.io to avoid xenial Release errors
+        local targets=(/etc/apt/sources.list /etc/apt/sources.list.d/*.list)
+        for f in "${targets[@]}"; do
+            [[ -e "$f" ]] || continue
+            if grep -qE "apt\.kubernetes\.io" "$f" 2>/dev/null; then
+                sudo cp -a "$f" "${f}.bak_$(date +%s)" || true
+                sudo sed -i 's/^\s*deb\s\+\S*apt\.kubernetes\.io\S*/# &/g' "$f" || true
+                log_info "Disabled Kubernetes apt repo in: $f"
+            fi
+        done
+        # Clean apt cache
+        sudo apt-get clean -qq || true
+    }
+
+    # Try apt update; if it fails due to bad repos, sanitize and retry
+    if ! sudo apt-get update -qq; then
+        log_warn "apt-get update failed. Attempting to disable obsolete Kubernetes apt repo and retry..."
+        sanitize_apt_sources
+        if ! sudo apt-get update -qq; then
+            log_warn "apt-get update still failing. Will attempt to install required packages with existing repo state."
+        fi
+    fi
+
+    # Install required packages; if some fail, log and continue (snapd often preinstalled on Ubuntu)
+    if sudo apt-get install -y -qq \
         snapd \
         curl \
         wget \
@@ -144,10 +170,11 @@ install_dependencies() {
         ca-certificates \
         gnupg \
         lsb-release \
-        net-tools \
-        || { log_error "Failed to install dependencies"; return 1; }
-    
-    log_success "System dependencies installed"
+        net-tools; then
+        log_success "System dependencies installed"
+    else
+        log_warn "Some dependencies failed to install. Continuing; snapd must be present for MicroK8s."
+    fi
 }
 
 install_microk8s() {
