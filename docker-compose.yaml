@@ -26,7 +26,7 @@ services:
   api-gateway:
     image: api-gateway:latest
     build:
-      context: ./packages/api-gateway
+      context: ./services/api-gateway
       dockerfile: Dockerfile
     container_name: api-gateway
     ports:
@@ -57,7 +57,7 @@ services:
   control-plane:
     image: control-plane:latest
     build:
-      context: ./packages/control-plane-service
+      context: ./services/control-plane-service
       dockerfile: Dockerfile
     container_name: control-plane
     ports:
@@ -125,7 +125,7 @@ services:
   frontend:
     image: frontend:latest
     build:
-      context: ./packages/frontend-service
+      context: ./services/frontend-service
       dockerfile: Dockerfile
     container_name: frontend
     ports:
@@ -162,7 +162,7 @@ services:
   project-service:
     image: project-service:latest
     build:
-      context: ./packages/project-service/backend
+      context: ./services/project-service/backend
       dockerfile: Dockerfile
     container_name: project-service
     ports:
