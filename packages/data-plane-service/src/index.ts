@@ -353,3 +353,4 @@ httpServer.listen(PORT, '0.0.0.0', () => {
 });
 
 export { app, io };
+// chore: no-op touch (commit 12/15) – 2025-11-12
