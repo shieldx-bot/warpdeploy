@@ -1,5 +1,6 @@
 version: '3.8'
 
+# chore: housekeeping touch – 2025-11-12
 services:
   # Sqlserver Database
   sqlserver:
