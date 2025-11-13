@@ -4,6 +4,9 @@
     "pg-pool": "^3.10.1"
   },
   "devDependencies": {
-    "@types/mssql": "^9.1.8"
+    "@types/mssql": "^9.1.8",
+    "@types/node": "^24.10.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }
