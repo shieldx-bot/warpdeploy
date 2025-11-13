@@ -45,7 +45,7 @@ Cài đặt "hệ thống thu thập dữ liệu" để tất cả services có 
    - **Exporters:** Nơi gửi dữ liệu đi (Prometheus, Loki, Tempo)
 3. Chạy lệnh Helm để cài đặt
 4. Đợi tất cả pods khởi động
-
+ 
 **Kiểm tra hoàn thành:**
 - Chạy `kubectl get pods -n observability`
 - Thấy pod `otel-collector-xxxxx` ở trạng thái `Running`
