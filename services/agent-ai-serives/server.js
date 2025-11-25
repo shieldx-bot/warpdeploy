@@ -14,13 +14,13 @@ const NUM_NODES = Number(process.env.NUM_NODES || 5)
 const FEATURE_SET = (process.env.FEATURE_SET || 'basic').toLowerCase() // 'basic' or 'full'
 
 // Basic features (match trainer): per node 5
-const BASIC_FEATURES = ['cpuRatio','ramRatio','diskRatio','cpuFreqRatio','podsCount']
+const BASIC_FEATURES = ['cpuRatio', 'ramRatio', 'diskRatio', 'cpuFreqRatio', 'podsCount']
 
 // Full features (match environment.getState order): per node 17
 const FULL_FEATURES = [
-	'cpuFreqRatio','cpuStealRatio','cpuIoWaitRatio','diskIopsReadRatio','diskIopsWriteRatio','diskLatencyRatio',
-	'pingExternalRatio','pingInternalRatio','networkJitterRatio','bandwidthInRatio','bandwidthOutRatio','packetLossRatio',
-	'tcpRetransmitsRatio','activeConnectionsRatio','cpuRatio','ramRatio','diskRatio'
+	'cpuFreqRatio', 'cpuStealRatio', 'cpuIoWaitRatio', 'diskIopsReadRatio', 'diskIopsWriteRatio', 'diskLatencyRatio',
+	'pingExternalRatio', 'pingInternalRatio', 'networkJitterRatio', 'bandwidthInRatio', 'bandwidthOutRatio', 'packetLossRatio',
+	'tcpRetransmitsRatio', 'activeConnectionsRatio', 'cpuRatio', 'ramRatio', 'diskRatio'
 ]
 
 function buildBasicState(nodes) {
@@ -45,34 +45,34 @@ function normTri(n, curK, minK, maxK) {
 	const cur = Number(n?.[curK])
 	const min = Number(n?.[minK])
 	const max = Number(n?.[maxK])
-	if ([cur,min,max].every((v) => Number.isFinite(v))) return normalizeMinMax(cur, min, max)
+	if ([cur, min, max].every((v) => Number.isFinite(v))) return normalizeMinMax(cur, min, max)
 	return 0.5
 }
 
 function buildFullState(nodes) {
 	const state = []
 	for (const n of nodes) {
-		const cpuFreqRatio = normTri(n,'CPUFrequency_current','CPUFrequency_min','CPUFrequency_max')
-		const cpuStealRatio = normTri(n,'CPUSteal_current','CPUSteal_min','CPUSteal_max')
-		const cpuIoWaitRatio = normTri(n,'CPUIOWait_current','CPUIOWait_min','CPUIOWait_max')
-		const diskIopsReadRatio = normTri(n,'DiskIOPSRead_current','DiskIOPSRead_min','DiskIOPSRead_max')
-		const diskIopsWriteRatio = normTri(n,'DiskIOPSWrite_current','DiskIOPSWrite_min','DiskIOPSWrite_max')
-		const diskLatencyRatio = normTri(n,'DiskLatency_current','DiskLatency_min','DiskLatency_max')
-		const pingExternalRatio = normTri(n,'PingExternal_avg','PingExternal_min','PingExternal_max')
-		const pingInternalRatio = normTri(n,'PingInternal_avg','PingInternal_min','PingInternal_max')
-		const networkJitterRatio = normTri(n,'NetworkJitter_current','NetworkJitter_min','NetworkJitter_max')
-		const bandwidthInRatio = normTri(n,'BandwidthIn_current','BandwidthIn_min','BandwidthIn_max')
-		const bandwidthOutRatio = normTri(n,'BandwidthOut_current','BandwidthOut_min','BandwidthOut_max')
-		const packetLossRatio = normTri(n,'PacketLoss_current','PacketLoss_min','PacketLoss_max')
-		const tcpRetransmitsRatio = normTri(n,'TCPRetransmits_current','TCPRetransmits_min','TCPRetransmits_max')
-		const activeConnectionsRatio = normTri(n,'ActiveConnections_current','ActiveConnections_min','ActiveConnections_max')
+		const cpuFreqRatio = normTri(n, 'CPUFrequency_current', 'CPUFrequency_min', 'CPUFrequency_max')
+		const cpuStealRatio = normTri(n, 'CPUSteal_current', 'CPUSteal_min', 'CPUSteal_max')
+		const cpuIoWaitRatio = normTri(n, 'CPUIOWait_current', 'CPUIOWait_min', 'CPUIOWait_max')
+		const diskIopsReadRatio = normTri(n, 'DiskIOPSRead_current', 'DiskIOPSRead_min', 'DiskIOPSRead_max')
+		const diskIopsWriteRatio = normTri(n, 'DiskIOPSWrite_current', 'DiskIOPSWrite_min', 'DiskIOPSWrite_max')
+		const diskLatencyRatio = normTri(n, 'DiskLatency_current', 'DiskLatency_min', 'DiskLatency_max')
+		const pingExternalRatio = normTri(n, 'PingExternal_avg', 'PingExternal_min', 'PingExternal_max')
+		const pingInternalRatio = normTri(n, 'PingInternal_avg', 'PingInternal_min', 'PingInternal_max')
+		const networkJitterRatio = normTri(n, 'NetworkJitter_current', 'NetworkJitter_min', 'NetworkJitter_max')
+		const bandwidthInRatio = normTri(n, 'BandwidthIn_current', 'BandwidthIn_min', 'BandwidthIn_max')
+		const bandwidthOutRatio = normTri(n, 'BandwidthOut_current', 'BandwidthOut_min', 'BandwidthOut_max')
+		const packetLossRatio = normTri(n, 'PacketLoss_current', 'PacketLoss_min', 'PacketLoss_max')
+		const tcpRetransmitsRatio = normTri(n, 'TCPRetransmits_current', 'TCPRetransmits_min', 'TCPRetransmits_max')
+		const activeConnectionsRatio = normTri(n, 'ActiveConnections_current', 'ActiveConnections_min', 'ActiveConnections_max')
 		const cpuRatio = ratioUsedTotal(n.used_cpu, n.total_cpu)
 		const ramRatio = ratioUsedTotal(n.used_ram, n.total_ram)
 		const diskRatio = ratioUsedTotal(n.DiskSpace_used, n.DiskSpace_total)
 		state.push(
-			cpuFreqRatio,cpuStealRatio,cpuIoWaitRatio,diskIopsReadRatio,diskIopsWriteRatio,diskLatencyRatio,
-			pingExternalRatio,pingInternalRatio,networkJitterRatio,bandwidthInRatio,bandwidthOutRatio,packetLossRatio,
-			tcpRetransmitsRatio,activeConnectionsRatio,cpuRatio,ramRatio,diskRatio
+			cpuFreqRatio, cpuStealRatio, cpuIoWaitRatio, diskIopsReadRatio, diskIopsWriteRatio, diskLatencyRatio,
+			pingExternalRatio, pingInternalRatio, networkJitterRatio, bandwidthInRatio, bandwidthOutRatio, packetLossRatio,
+			tcpRetransmitsRatio, activeConnectionsRatio, cpuRatio, ramRatio, diskRatio
 		)
 	}
 	return state
