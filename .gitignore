@@ -1,3 +1,4 @@
 packages/agent-ai-serives/.gitignore
 node_modules
 packages/frontend-service/README.md
+packages/agent-ai-serives/models/ppo_pod_scheduler_full_episode_1400/critic/weights.bin

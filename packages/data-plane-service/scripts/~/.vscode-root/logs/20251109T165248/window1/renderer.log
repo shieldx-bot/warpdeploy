@@ -1,0 +1,7 @@
+2025-11-09 16:52:50.155 [info] ChatSessionStore: Migrating 0 chat sessions from storage service to file system
+2025-11-09 16:52:50.309 [info] Started local extension host with pid 1558012.
+2025-11-09 16:52:50.338 [info] Started initializing default profile extensions in extensions installation folder. file:///root/.vscode/extensions
+2025-11-09 16:52:50.490 [info] Completed initializing default profile extensions in extensions installation folder. file:///root/.vscode/extensions
+2025-11-09 16:52:50.889 [info] MCP Registry configured: https://api.mcp.github.com/2025-09-15
+2025-11-09 16:52:51.318 [info] Settings Sync: Account status changed from uninitialized to unavailable
+2025-11-09 16:52:53.682 [info] [perf] Render performance baseline is 88ms

@@ -41,7 +41,7 @@ class ClusterSimulator {
             PacketLoss: Math.random() * 2,           // percent 0-2
             TCPRetransmits: Math.random() * 50,      // per interval 0-50
             ActiveConnections: 50 + Math.random() * 950, // 50-1000
-            
+
 
 
 
@@ -76,9 +76,9 @@ class ClusterSimulator {
                 const ramRatio = n.usedRAM / n.totalRAM
                 const diskRatio = n.DiskSpace_used / n.DiskSpace_total
                 state.push(
-                    cpuFreqRatio,cpuStealRatio,cpuIoWaitRatio,diskIopsReadRatio,diskIopsWriteRatio,diskLatencyRatio,
-                    pingExternalRatio,pingInternalRatio,networkJitterRatio,bandwidthInRatio,bandwidthOutRatio,packetLossRatio,
-                    tcpRetransmitsRatio,activeConnectionsRatio,cpuRatio,ramRatio,diskRatio
+                    cpuFreqRatio, cpuStealRatio, cpuIoWaitRatio, diskIopsReadRatio, diskIopsWriteRatio, diskLatencyRatio,
+                    pingExternalRatio, pingInternalRatio, networkJitterRatio, bandwidthInRatio, bandwidthOutRatio, packetLossRatio,
+                    tcpRetransmitsRatio, activeConnectionsRatio, cpuRatio, ramRatio, diskRatio
                 )
             } else {
                 // basic
@@ -94,10 +94,10 @@ class ClusterSimulator {
     }
     canFit(nodeId, cpuReq, ramReq, diskReq = 0) {
         const n = this.nodes[nodeId]
-        const  resourcesFit = n.usedCPU + cpuReq <= n.totalCPU && 
-                              n.usedRAM + ramReq <= n.totalRAM && 
-                            n.DiskSpace_used + diskReq <= n.DiskSpace_total;
-        const CPUFrequencyOk = n.CPUFrequency >= 1.5; 
+        const resourcesFit = n.usedCPU + cpuReq <= n.totalCPU &&
+            n.usedRAM + ramReq <= n.totalRAM &&
+            n.DiskSpace_used + diskReq <= n.DiskSpace_total;
+        const CPUFrequencyOk = n.CPUFrequency >= 1.5;
         return resourcesFit && CPUFrequencyOk;
     }
     schedulePod(nodeId, pod) {
@@ -112,7 +112,7 @@ class ClusterSimulator {
         const diskUtil = n.DiskSpace_used / n.DiskSpace_total
 
         const baseTime = 100
-        const penalty = Math.max(cpuUtil, ramUtil, diskUtil ) ** 2 * 200
+        const penalty = Math.max(cpuUtil, ramUtil, diskUtil) ** 2 * 200
         const norm = (v, max) => Math.max(0, Math.min(1, v / max));
         const cpuFreqRatio = norm(n.CPUFrequency, 4.0);
         const cpuStealRatio = norm(n.CPUSteal, 20.0);
@@ -151,7 +151,7 @@ class ClusterSimulator {
         ) * 100;
         const totalPenalty = penalty + dynamicPenalty
         const responseTime = baseTime + totalPenalty + Math.random() * 50
-         // evolve dynamic metrics slightly (random walk) to simulate changes
+        // evolve dynamic metrics slightly (random walk) to simulate changes
         const jitter = () => (Math.random() - 0.5)
         n.CPUFrequency = Math.max(0.5, Math.min(4.0, n.CPUFrequency + 0.05 * jitter()))
         n.CPUSteal = Math.max(0, Math.min(20, n.CPUSteal + 0.5 * jitter()))
@@ -186,13 +186,14 @@ class ClusterSimulator {
 
 // ========== 2. Pod Generator ==========
 function generatePod(id) {
-    return { id,
+    return {
+        id,
         cpu: 0.5 + Math.random() * 1.5,
-        ram: 1 + Math.random() * 3, 
+        ram: 1 + Math.random() * 3,
         DiskSpace: 2 + Math.random() * 8,
         duration: 5 + Math.floor(Math.random() * 10),
 
-     }
+    }
 }
 
 // ========== 3. Reward Function ==========
@@ -233,9 +234,9 @@ async function train() {
         batchSize: 64,
     })
     // cluster already created above
-        const numEpisodes = Number(process.env.EPISODES || 5000)
-        const podsPerEpisode = Number(process.env.PODS || 500)
-        const saveInterval = Number(process.env.SAVE_INTERVAL || 50)
+    const numEpisodes = Number(process.env.EPISODES || 5000)
+    const podsPerEpisode = Number(process.env.PODS || 500)
+    const saveInterval = Number(process.env.SAVE_INTERVAL || 50)
     console.log('🚀 Starting PPO training for pod scheduling...')
     for (let episode = 1; episode <= numEpisodes; episode++) {
         cluster.resetCluster()
@@ -308,7 +309,7 @@ async function evaluate() {
     console.log(`📈 Avg Response Time: ${cluster.getAverageResponseTime().toFixed(1)}ms`)
 }
 
-;(async () => {
+; (async () => {
     const mode = process.argv[2] || 'train'
     if (mode === 'train') await train()
     else if (mode === 'eval' || mode === 'evaluate') await evaluate()
