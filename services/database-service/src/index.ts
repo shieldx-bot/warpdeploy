@@ -9,7 +9,7 @@ const app: Express = express();
 app.use(express.json());
 
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 1474;
 
 app.get('/', async (req: Request, res: Response) => {
     const sql = 'select *  from cloud_server_user'
