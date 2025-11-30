@@ -1,4 +1,4 @@
-import React from 'react';  
+import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import LoginPage from '@/components/login/index';
 import Dashboard from '@/components/dashboard/index';
@@ -6,17 +6,20 @@ import SignupPage from '@/components/signup';
 import OTPPage from '@/components/otp';
 import Imports from '@/components/ImportRepos';
 import Deploy from '@/components/Deploy/index';
+import ManageServers from '@/components/ManageServer';
+
 
 function App() {
-   return (
+  return (
     <div className='App'>
       <Routes>
-        <Route path="/dashboard" element={<Dashboard/>}  />
-        <Route path="/login" element={<LoginPage/>}  />
-        <Route path="/signup" element={<SignupPage/>}  />
-        <Route path="/verify-otp" element={<OTPPage/>}  />
-        <Route path="/import-repos" element={<Imports/>}  />
-        <Route path="/deploy" element={<Deploy/>}  />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/verify-otp" element={<OTPPage />} />
+        <Route path="/import-repos" element={<Imports />} />
+        <Route path="/deploy" element={<Deploy />} />
+        <Route path="/manage-servers" element={<ManageServers />} />
       </Routes>
     </div>
   )
