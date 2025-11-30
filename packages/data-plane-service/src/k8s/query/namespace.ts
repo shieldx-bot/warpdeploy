@@ -32,6 +32,9 @@ export const setUpNamespace = async (namespace: any) => {
     }
 }
 
+
+
+
 export const deleteNamespace = async (namespace: any) => {
     try {
         await k8sApi.deleteNamespace(namespace);
