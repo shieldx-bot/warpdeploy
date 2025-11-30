@@ -15,6 +15,7 @@ import {
   IconSearch,
   IconSettings,
   IconUsers,
+  IconServer,
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -52,6 +53,11 @@ const data = {
       title: "Analytics",
       url: "#",
       icon: IconChartBar,
+    },
+    {
+      title: "Servers",
+      url: "/manage-servers",
+      icon: IconServer,
     },
     {
       title: "Projects",
