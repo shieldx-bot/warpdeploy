@@ -36,7 +36,7 @@ begin
     created_at datetime default current_timestamp,
     updated_at datetime default current_timestamp, 
     github_username varchar(255),
-    github_token varchar(255),
+    github_token varchar(255) 
 	)
 end
 select  * from users
@@ -62,7 +62,27 @@ create table cloud_server_user (
     contextName varchar(30)
 ) end
 
-drop table  users
+drop table  cloud_server_user
+
+go
+
+INSERT INTO users (email_user, username, password_hash, role_at, github_username, github_token) VALUES
+('admin@example.com', 'admin', '$2b$10$xyz123abc456def789ghi', 'admin', 'admin-github', 'NULL' ),
+('john.doe@email.com', 'johndoe', '$2b$10$abc123def456ghi789jkl', 'user', 'johndev', 'NULL'),
+('jane.smith@company.com', 'janesmith', '$2b$10$def456ghi789jkl012mno', 'user', 'janesmith', 'NULL'),
+('mike.wilson@tech.org', 'mikewilson', '$2b$10$ghi789jkl012mno345pqr', 'moderator', 'mikew', 'NULL'),
+('sarah.connor@future.net', 'sarahc', '$2b$10$jkl012mno345pqr678stu', 'user', 'sarahconnor', 'NULL'),
+('alex.johnson@startup.io', 'alexj', '$2b$10$mno345pqr678stu901vwx', 'user', 'alexjohnson', 'NULL'),
+('lisa.ray@design.com', 'lisaray', '$2b$10$pqr678stu901vwx234yza', 'user', 'lisaraydesign', 'NULL'),
+('david.brown@devteam.com', 'davidb', '$2b$10$stu901vwx234yza567bcd', 'user', 'davidbrowndev', 'NULL'),
+('emma.watson@webapp.com', 'emmaw', '$2b$10$vwx234yza567bcd890efg', 'user', 'emmawatson', 'NULL'),
+('ryan.garcia@mobile.dev', 'ryang', '$2b$10$yza567bcd890efg123hij', 'user', 'ryangarcia', 'NULL'),
+('olivia.martinez@cloud.io', 'oliviam', '$2b$10$bcd890efg123hij456klm', 'user', 'oliviamtz', 'NULL'),
+('william.taylor@api.com', 'williamt', '$2b$10$efg123hij456klm789nop', 'user', 'wtaylor', 'NULL'),
+('sophia.anderson@data.net', 'sophiaa', '$2b$10$hij456klm789nop012qrs', 'user', 'sophiaanders', 'NULL'),
+('james.miller@backend.org', 'jamesm', '$2b$10$klm789nop012qrs345tuv', 'user', 'jamesmiller', 'NULL'),
+('isabella.davis@frontend.com', 'isabellad', '$2b$10$nop012qrs345tuv678wxy', 'user', 'isad', 'NULL')
+
 
 
 
